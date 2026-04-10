@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-// Aqui dizemos: "Pegue o que está no arquivo MedicoCard e chame de DoctorCard aqui dentro"
-import DoctorCard from '../components/MedicoCard';
+// Importamos o componente e damos o nome de MedicoCard para seguir seu padrão
+import MedicoCard from '../components/MedicoCard';
 import { DOCTORS } from '../data/doctors';
-
 
 export default function Home() {
   const [busca, setBusca] = useState("");
@@ -14,16 +13,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navbar */}
-      <nav className="bg-white shadow-sm p-4">
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-primary">Saúde Digital</h1>
-          <div className="space-x-4">
-            <button className="text-gray-600 font-medium">Médicos</button>
-            <button className="bg-secondary text-white px-4 py-2 rounded-lg font-bold hover:bg-opacity-90 transition">Entrar</button>
-          </div>
-        </div>
-      </nav>
+      {/* DICA: A Navbar não deve ficar aqui se você já a colocou no App.jsx! 
+          Se ela estiver no App.jsx, pode apagar este bloco <nav> abaixo.
+      */}
 
       {/* Hero Section */}
       <header className="bg-primary py-16 px-4">
@@ -43,7 +35,7 @@ export default function Home() {
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />
-            <button className="bg-secondary text-white px-8 py-3 rounded-xl font-bold hover:bg-opacity-90 transition">
+            <button className="bg-secondary text-white px-8 py-3 rounded-xl font-bold">
               Buscar
             </button>
           </div>
@@ -59,11 +51,12 @@ export default function Home() {
         {medicosFiltrados.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {medicosFiltrados.map(doc => (
-              <DoctorCard key={doc.id} doctor={doc} />
+              /* IMPORTANTE: Usar medico={doc} para o MedicoCard.jsx entender */
+              <MedicoCard key={doc.id} medico={doc} />
             ))}
           </div>
         ) : (
-          <p className="text-gray-500 text-center py-10">Nenhum médico encontrado para essa busca.</p>
+          <p className="text-gray-500 text-center py-10">Nenhum médico encontrado.</p>
         )}
       </section>
     </div>
