@@ -5,8 +5,16 @@ export default function MyAppointments() {
   const [agendamentos, setAgendamentos] = useState([]);
 
   useEffect(() => {
-    const dados = JSON.parse(localStorage.getItem('meusAgendamentos') || '[]');
-    setAgendamentos(dados);
+  const usuario = JSON.parse(localStorage.getItem('usuarioLogado'));
+  const todosAgendamentos = JSON.parse(localStorage.getItem('agendamentos') || '[]');
+
+  if (usuario && usuario.email) {
+    // Comparamos os dois em minúsculo para não ter erro
+    const meusDados = todosAgendamentos.filter(
+      a => a.clienteEmail.toLowerCase() === usuario.email.toLowerCase()
+    );
+    setAgendamentos(meusDados);
+  }
   }, []);
 
   // Lógica para Desmarcar (Remover do localStorage)

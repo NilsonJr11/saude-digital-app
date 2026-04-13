@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-// Importamos o componente e damos o nome de MedicoCard para seguir seu padrão
-import MedicoCard from '../components/MedicoCard';
+import { useNavigate } from 'react-router-dom'; // Importação que estava faltando
 import { DOCTORS } from '../data/doctors';
 
 export default function Home() {
   const [busca, setBusca] = useState("");
+  const navigate = useNavigate(); // Inicialização do navigate
 
+  // Filtramos os médicos com base na busca
   const medicosFiltrados = DOCTORS.filter(doc => 
     doc.nome.toLowerCase().includes(busca.toLowerCase()) || 
     doc.especialidade.toLowerCase().includes(busca.toLowerCase())
@@ -13,10 +14,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* DICA: A Navbar não deve ficar aqui se você já a colocou no App.jsx! 
-          Se ela estiver no App.jsx, pode apagar este bloco <nav> abaixo.
-      */}
-
       {/* Hero Section */}
       <header className="bg-primary py-16 px-4">
         <div className="container mx-auto text-center text-white">
@@ -47,12 +44,35 @@ export default function Home() {
         <h3 className="text-2xl font-bold text-secondary mb-8">
           {busca ? `Resultados para "${busca}"` : "Médicos em Destaque"}
         </h3>
-        
+
         {medicosFiltrados.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {medicosFiltrados.map(doc => (
-              /* IMPORTANTE: Usar medico={doc} para o MedicoCard.jsx entender */
-              <MedicoCard key={doc.id} medico={doc} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {medicosFiltrados.map((medico) => (
+              <div key={medico.id} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center text-primary font-bold text-2xl">
+                    {medico.nome[0]}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg">{medico.nome}</h3>
+                    <p className="text-primary text-sm">{medico.especialidade}</p>
+                  </div>
+                </div>
+                
+                {/* Selo de Avaliação Estilizado */}
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="bg-yellow-400 text-[10px] font-bold px-2 py-1 rounded-lg flex items-center gap-1">
+                    ⭐ {medico.rating || "5.0"} ({medico.reviews || "100+ avaliações"})
+                  </span>
+                </div>
+
+                <button 
+                  onClick={() => navigate(`/medico/${medico.id}`)}
+                  className="w-full py-3 bg-gray-50 text-primary font-bold rounded-xl hover:bg-primary hover:text-white transition"
+                >
+                  Ver perfil
+                </button>
+              </div>
             ))}
           </div>
         ) : (

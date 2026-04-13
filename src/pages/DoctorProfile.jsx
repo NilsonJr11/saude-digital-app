@@ -1,104 +1,125 @@
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { DOCTORS } from '../data/doctors';
 
 export default function DoctorProfile() {
   const { id } = useParams();
-  const [dataSelecionada, setDataSelecionada] = useState("");
-  const [confirmado, setConfirmado] = useState(false);
-
+  const navigate = useNavigate();
+  
+  // 1. Primeiro buscamos o médico
   const medico = DOCTORS.find(doc => doc.id === parseInt(id));
 
-  if (!medico) return <div className="p-8">Médico não encontrado.</div>;
+  // 2. Depois criamos os estados e variáveis que dependem de lógica
+  const [dataConsulta, setDataConsulta] = useState("");
+  const hoje = new Date().toISOString().split('T')[0];
 
-  // ESTA É A ÚNICA FUNÇÃO QUE DEVE EXISTIR
+  // 3. Verificação de segurança: se o médico não existir, para aqui
+  if (!medico) {
+    return (
+      <div className="text-center py-20">
+        <h2 className="text-2xl font-bold">Médico não encontrado.</h2>
+        <button onClick={() => navigate('/')} className="text-primary underline mt-4">
+          Voltar para o início
+        </button>
+      </div>
+    );
+  }
+
   const handleAgendar = () => {
-    if (!dataSelecionada) {
-      alert("Por favor, selecione uma data antes de confirmar.");
+    const usuarioLogadoRaw = localStorage.getItem('usuarioLogado');
+    
+    if (!usuarioLogadoRaw) {
+      alert("Você precisa estar logado para agendar!");
+      navigate('/login');
       return;
     }
 
+    if (!dataConsulta) {
+      alert("Por favor, selecione uma data.");
+      return;
+    }
+
+    const usuarioLogado = JSON.parse(usuarioLogadoRaw);
+
     const novoAgendamento = {
       id: Date.now(),
+      clienteEmail: usuarioLogado.email.toLowerCase(),
       medicoNome: medico.nome,
       especialidade: medico.especialidade,
-      data: dataSelecionada
+      data: dataConsulta
     };
 
-    // 1. Pega a lista atual do navegador
-    const listaSalva = JSON.parse(localStorage.getItem('meusAgendamentos') || '[]');
-    
-    // 2. Adiciona o novo agendamento à lista existente (sem apagar os antigos)
-    const listaAtualizada = [...listaSalva, novoAgendamento];
+    const agendamentosSalvos = JSON.parse(localStorage.getItem('agendamentos') || '[]');
+    agendamentosSalvos.push(novoAgendamento);
+    localStorage.setItem('agendamentos', JSON.stringify(agendamentosSalvos));
 
-    // 3. Salva a lista completa de volta no LocalStorage
-    localStorage.setItem('meusAgendamentos', JSON.stringify(listaAtualizada));
-
-    // 4. Muda a tela para sucesso
-    setConfirmado(true);
+    alert(`Consulta com ${medico.nome} agendada com sucesso!`);
+    navigate('/meus-agendamentos');
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm p-4 mb-8">
-        <div className="container mx-auto">
-          <Link to="/" className="text-primary font-bold">← Voltar para a Busca</Link>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-gray-50 py-12 px-4">
+      <div className="container mx-auto max-w-4xl">
+        <button onClick={() => navigate(-1)} className="text-primary font-bold mb-6 flex items-center gap-2 hover:underline">
+          ← Voltar
+        </button>
 
-      <div className="container mx-auto px-4 max-w-4xl">
-        {confirmado ? (
-          <div className="bg-white rounded-3xl shadow-xl p-12 text-center">
-            <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl">
-              ✓
+        <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
+          {/* Header do Médico */}
+          <div className="bg-primary p-8 text-white flex flex-col md:flex-row items-center gap-6">
+            <div className="w-32 h-32 bg-white/20 rounded-3xl flex items-center justify-center text-4xl font-bold border-4 border-white/30">
+              {medico.nome[0]}
             </div>
-            <h2 className="text-3xl font-bold text-secondary mb-2">Consulta Agendada!</h2>
-            <p className="text-gray-600 mb-8">
-              Sua consulta com <strong>{medico.nome}</strong> foi marcada para o dia <strong>{new Date(dataSelecionada).toLocaleDateString('pt-BR')}</strong>.
+            <div>
+              <h1 className="text-3xl font-bold">{medico.nome}</h1>
+              <p className="text-xl opacity-90">{medico.especialidade}</p>
+              <div className="mt-2">
+                <span className="bg-yellow-400 text-secondary text-xs font-bold px-2 py-1 rounded-lg">
+                  ⭐ {medico.rating || "5.0"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-8">
+            {/* Informações de Valor e Localização (O que deixa atrativo!) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                <p className="text-gray-500 text-xs uppercase font-bold mb-1">Valor da Consulta</p>
+                <p className="text-xl font-bold text-secondary">{medico.valor || "R$ 250,00"}</p>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                <p className="text-gray-500 text-xs uppercase font-bold mb-1">Localização</p>
+                <p className="text-sm font-bold text-secondary">{medico.localizacao || "São Paulo - SP"}</p>
+              </div>
+            </div>
+
+            <h2 className="text-2xl font-bold text-secondary mb-4">Sobre o Especialista</h2>
+            <p className="text-gray-600 mb-8 leading-relaxed">
+              {medico.bio || "Médico especialista focado em atendimento humanizado."}
             </p>
-            <Link to="/meus-agendamentos" className="bg-primary text-white px-8 py-3 rounded-xl font-bold">
-              Ver Meus Agendamentos
-            </Link>
-          </div>
-        ) : (
-          <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
-            <div className="bg-primary p-8 text-white flex items-center gap-6">
-              <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center text-3xl font-bold">
-                {medico.nome.charAt(0)}
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold">{medico.nome}</h1>
-                <p className="text-accent font-medium">{medico.especialidade}</p>
-              </div>
+
+            <div className="mb-8">
+              <label className="block text-gray-700 font-medium mb-2">
+                Data da Consulta
+              </label>
+              <input 
+                type="date" 
+                min={hoje}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition"
+                value={dataConsulta}
+                onChange={(e) => setDataConsulta(e.target.value)}
+              />
             </div>
-            
-            <div className="p-8 grid md:grid-cols-2 gap-8">
-              <div>
-                <h3 className="text-xl font-bold text-secondary mb-4">Sobre o Profissional</h3>
-                <p className="text-gray-600 leading-relaxed">{medico.sobre}</p>
-              </div>
-              
-              <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
-                <h3 className="text-xl font-bold text-secondary mb-4">Agendar Consulta</h3>
-                <p className="text-sm text-gray-500 mb-4">Selecione uma data disponível:</p>
-                
-                <input 
-                  type="date" 
-                  className="w-full p-3 rounded-lg border border-gray-200 mb-4 outline-none focus:border-primary" 
-                  value={dataSelecionada}
-                  onChange={(e) => setDataSelecionada(e.target.value)}
-                />
-                
-                <button 
-                  onClick={handleAgendar}
-                  className="w-full bg-secondary text-white py-3 rounded-xl font-bold hover:bg-opacity-90 transition"
-                >
-                  Confirmar Agendamento
-                </button>
-              </div>
-            </div>
+
+            <button 
+              onClick={handleAgendar}
+              className="w-full bg-secondary text-white py-5 rounded-2xl font-bold text-xl shadow-lg hover:bg-opacity-90 transition active:scale-[0.98]"
+            >
+              Agendar Consulta Agora
+            </button>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
