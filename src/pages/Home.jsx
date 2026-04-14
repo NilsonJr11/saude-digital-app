@@ -1,84 +1,147 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Importação que estava faltando
+import { useNavigate } from 'react-router-dom';
 import { DOCTORS } from '../data/doctors';
 
 export default function Home() {
-  const [busca, setBusca] = useState("");
-  const navigate = useNavigate(); // Inicialização do navigate
+  const navigate = useNavigate();
+  const [etapa, setEtapa] = useState(1);
+  const [filtros, setFiltros] = useState({ especialidade: '', medicoId: null });
 
-  // Filtramos os médicos com base na busca
-  const medicosFiltrados = DOCTORS.filter(doc => 
-    doc.nome.toLowerCase().includes(busca.toLowerCase()) || 
-    doc.especialidade.toLowerCase().includes(busca.toLowerCase())
-  );
+  const especialidades = [...new Set(DOCTORS.map(d => d.especialidade))];
+  const medicosFiltrados = DOCTORS.filter(d => d.especialidade === filtros.especialidade);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <header className="bg-primary py-16 px-4">
-        <div className="container mx-auto text-center text-white">
-          <h2 className="text-4xl md:text-5xl font-extrabold mb-4">
-            Sua saúde em boas mãos, a um clique.
-          </h2>
-          <p className="mb-8 text-lg opacity-90">
-            Agende consultas online com os melhores especialistas.
-          </p>
-          
-          <div className="max-w-2xl mx-auto flex flex-col md:flex-row gap-2 bg-white p-2 rounded-2xl shadow-xl">
-            <input 
-              type="text" 
-              placeholder="Busque por nome ou especialidade..." 
-              className="flex-1 p-3 text-gray-800 outline-none rounded-xl"
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-            />
-            <button className="bg-secondary text-white px-8 py-3 rounded-xl font-bold">
-              Buscar
-            </button>
+    <div className="min-h-screen bg-gray-50 pb-20">
+      {/* 1. SEÇÃO HERO */}
+      <div className="bg-primary pt-16 pb-32 px-4 text-center">
+        <h1 className="text-white text-4xl md:text-5xl font-extrabold mb-4 tracking-tight">
+          Sua saúde em boas mãos, a um clique.
+        </h1>
+        <p className="text-white/80 text-lg max-w-2xl mx-auto">
+          Agende consultas online com os melhores especialistas da nossa rede.
+        </p>
+      </div>
+
+      {/* 2. CARD DE AGENDAMENTO */}
+      <div className="container mx-auto max-w-4xl px-4 -mt-20">
+        <div className="bg-white rounded-3xl shadow-2xl p-8 border border-gray-100 relative z-10">
+          <div className="flex justify-between items-center mb-10 border-b border-gray-50 pb-6">
+            {[
+              { step: 1, label: 'Especialidade' },
+              { step: 2, label: 'Profissional' },
+              { step: 3, label: 'Finalizar' }
+            ].map((item) => (
+              <div key={item.step} className="flex flex-col items-center gap-2 flex-1">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
+                  etapa >= item.step ? 'bg-primary text-white scale-110' : 'bg-gray-100 text-gray-400'
+                }`}>
+                  {item.step}
+                </div>
+                <span className={`text-xs font-bold uppercase tracking-wider ${
+                  etapa >= item.step ? 'text-secondary' : 'text-gray-300'
+                }`}>
+                  {item.label}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="min-h-[250px]">
+            {etapa === 1 && (
+              <div className="animate-fadeIn">
+                <h3 className="text-xl font-bold text-secondary mb-6 text-center">Qual especialidade você procura?</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {especialidades.map(esp => (
+                    <button 
+                      key={esp}
+                      onClick={() => { setFiltros({...filtros, especialidade: esp}); setEtapa(2); }}
+                      className="p-4 rounded-2xl border-2 border-gray-50 bg-gray-50 hover:border-primary hover:bg-white hover:shadow-md transition-all text-sm font-bold text-gray-700"
+                    >
+                      {esp}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {etapa === 2 && (
+              <div className="animate-fadeIn">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-xl font-bold text-secondary">Escolha o profissional</h3>
+                  <button onClick={() => setEtapa(1)} className="text-sm text-gray-400 hover:text-primary font-bold">← Voltar</button>
+                </div>
+                <div className="space-y-3">
+                  {medicosFiltrados.map(med => (
+                    <div 
+                      key={med.id} 
+                      onClick={() => { setFiltros({...filtros, medicoId: med.id}); setEtapa(3); }}
+                      className="group flex items-center justify-between p-5 rounded-2xl border border-gray-100 bg-white hover:shadow-lg transition-all cursor-pointer"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center font-bold text-primary">
+                          {med.nome[0]}
+                        </div>
+                        <div>
+                          <p className="font-extrabold text-secondary">{med.nome}</p>
+                          <p className="text-xs text-gray-500">{med.localizacao || 'Atendimento presencial'}</p>
+                        </div>
+                      </div>
+                      <span className="text-primary font-bold">→</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {etapa === 3 && (
+              <div className="text-center py-6 animate-fadeIn">
+                <div className="mb-6">
+                  <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-4">✓</div>
+                  <h3 className="text-2xl font-bold text-secondary">Quase lá!</h3>
+                  <p className="text-gray-500 mt-2">Profissional selecionado com sucesso.</p>
+                </div>
+                <button 
+                  onClick={() => navigate(`/medico/${filtros.medicoId}`)}
+                  className="bg-secondary text-white px-10 py-5 rounded-2xl font-black text-lg shadow-xl hover:scale-105 transition-all w-full md:w-auto"
+                >
+                  ACESSAR CALENDÁRIO
+                </button>
+              </div>
+            )}
           </div>
         </div>
-      </header>
+      </div>
 
-      {/* Seção de Médicos */}
-      <section className="container mx-auto py-12 px-4">
-        <h3 className="text-2xl font-bold text-secondary mb-8">
-          {busca ? `Resultados para "${busca}"` : "Médicos em Destaque"}
-        </h3>
-
-        {medicosFiltrados.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {medicosFiltrados.map((medico) => (
-              <div key={medico.id} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center text-primary font-bold text-2xl">
-                    {medico.nome[0]}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg">{medico.nome}</h3>
-                    <p className="text-primary text-sm">{medico.especialidade}</p>
-                  </div>
+      {/* 3. LISTAGEM DE DESTAQUES - AQUI ESTÁ O ALVO DO SCROLL */}
+      <div id="medicos-destaque" className="container mx-auto px-4 mt-24 scroll-mt-20">
+        <div className="flex items-center justify-between mb-10">
+          <h2 className="text-3xl font-black text-secondary">Médicos em Destaque</h2>
+          <div className="h-1 flex-1 bg-gray-100 ml-6 hidden md:block"></div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {DOCTORS.slice(0, 4).map((medico) => (
+            <div key={medico.id} className="bg-white rounded-3xl shadow-sm hover:shadow-2xl transition-all duration-300 border border-gray-100 flex flex-col overflow-hidden group">
+              <div className="p-8 flex flex-col items-center text-center flex-grow">
+                <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center text-3xl font-bold text-primary mb-4 group-hover:bg-primary group-hover:text-white transition-all duration-500">
+                  {medico.nome[0]}
                 </div>
-                
-                {/* Selo de Avaliação Estilizado */}
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="bg-yellow-400 text-[10px] font-bold px-2 py-1 rounded-lg flex items-center gap-1">
-                    ⭐ {medico.rating || "5.0"} ({medico.reviews || "100+ avaliações"})
-                  </span>
+                <h3 className="text-xl font-bold text-secondary mb-1">{medico.nome}</h3>
+                <p className="text-primary font-bold text-sm mb-4 uppercase">{medico.especialidade}</p>
+                <div className="bg-yellow-400/20 text-yellow-700 px-3 py-1 rounded-lg text-xs font-black mb-6">
+                  ⭐ {medico.rating || "4.8"}
                 </div>
-
                 <button 
                   onClick={() => navigate(`/medico/${medico.id}`)}
-                  className="w-full py-3 bg-gray-50 text-primary font-bold rounded-xl hover:bg-primary hover:text-white transition"
+                  className="w-full py-4 bg-gray-50 text-secondary font-bold rounded-2xl group-hover:bg-secondary group-hover:text-white transition-colors"
                 >
                   Ver perfil
                 </button>
               </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-500 text-center py-10">Nenhum médico encontrado.</p>
-        )}
-      </section>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

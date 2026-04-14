@@ -2,75 +2,88 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 
 export default function Register() {
-  const [formData, setFormData] = useState({ nome: '', email: '', senha: '' });
+  const [nome, setNome] = useState('');
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
   const navigate = useNavigate();
 
   const handleRegister = (e) => {
     e.preventDefault();
-
-    // 1. Criamos o objeto do usuário com os dados do estado
-    const novoUsuario = {
-      nome: formData.nome,
-      email: formData.email,
-      senha: formData.senha // Em um app real, nunca salvaríamos a senha pura assim
-    };
-
-    // 2. Salvamos na lista geral de usuários (para o futuro Login)
     const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+    
+    if (usuarios.find(u => u.email === email)) {
+      alert("Este email já está cadastrado!");
+      return;
+    }
+
+    const novoUsuario = { nome, email, senha };
     usuarios.push(novoUsuario);
     localStorage.setItem('usuarios', JSON.stringify(usuarios));
-
-    // 3. Salvamos quem é o usuário atual (para a Navbar mostrar o nome)
-    localStorage.setItem('usuarioLogado', JSON.stringify(novoUsuario));
     
-    alert("Cadastro realizado com sucesso!");
-    window.location.href = '/';}
+    alert("Conta criada com sucesso! Agora faça seu login.");
+    navigate('/login');
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="bg-white p-8 rounded-3xl shadow-lg w-full max-w-md border border-gray-100">
-        <h2 className="text-3xl font-bold text-secondary mb-6 text-center">Criar Conta</h2>
+    <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
+      <div className="bg-white w-full max-w-md rounded-[40px] shadow-2xl overflow-hidden border border-gray-100">
         
-        <form onSubmit={handleRegister} className="space-y-4">
+        <div className="bg-primary p-10 text-center">
+          <h2 className="text-white text-3xl font-black italic tracking-tighter">Saúde Digital</h2>
+          <p className="text-white/70 text-sm mt-2">Cadastre-se para cuidar da sua saúde</p>
+        </div>
+
+        <form onSubmit={handleRegister} className="p-10 space-y-5">
           <div>
-            <label className="block text-gray-700 font-medium mb-1">Nome Completo</label>
+            <label className="block text-secondary font-bold mb-2 text-sm">Nome Completo</label>
             <input 
               type="text" 
               required
-              value={formData.nome}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition"
-              onChange={(e) => setFormData({...formData, nome: e.target.value})}
+              className="w-full px-5 py-4 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
+              placeholder="Como quer ser chamado?"
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
             />
           </div>
+
           <div>
-            <label className="block text-gray-700 font-medium mb-1">E-mail</label>
+            <label className="block text-secondary font-bold mb-2 text-sm">E-mail</label>
             <input 
               type="email" 
               required
-              value={formData.email}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition"
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              className="w-full px-5 py-4 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
+              placeholder="exemplo@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
           </div>
+
           <div>
-            <label className="block text-gray-700 font-medium mb-1">Senha</label>
+            <label className="block text-secondary font-bold mb-2 text-sm">Crie uma Senha</label>
             <input 
               type="password" 
               required
-              value={formData.senha}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition"
-              onChange={(e) => setFormData({...formData, senha: e.target.value})}
+              className="w-full px-5 py-4 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
+              placeholder="No mínimo 6 caracteres"
+              value={senha}
+              onChange={(e) => setSenha(e.target.value)}
             />
           </div>
-          
-          <button type="submit" className="w-full bg-primary text-white py-4 rounded-2xl font-bold shadow-lg shadow-primary/30 hover:bg-opacity-90 transition mt-4">
-            Cadastrar
+
+          <button 
+            type="submit"
+            className="w-full bg-secondary text-white py-5 rounded-2xl font-black text-lg shadow-lg hover:bg-opacity-90 transition-all active:scale-95 mt-4"
+          >
+            FINALIZAR CADASTRO
           </button>
+
+          <p className="text-center text-gray-500 text-sm pt-2">
+            Já tem uma conta? {' '}
+            <Link to="/login" className="text-primary font-bold hover:underline">
+              Fazer Login
+            </Link>
+          </p>
         </form>
-        
-        <p className="mt-6 text-center text-gray-500">
-          Já tem uma conta? <Link to="/" className="text-primary font-bold hover:underline">Voltar para Home</Link>
-        </p>
       </div>
     </div>
   );

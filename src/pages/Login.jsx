@@ -8,48 +8,68 @@ export default function Login() {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    
-    // 1. Pega a lista de todos os usuários cadastrados
     const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
-    
-    // 2. Procura se existe um usuário com esse e-mail e senha
     const usuarioEncontrado = usuarios.find(u => u.email === email && u.senha === senha);
 
     if (usuarioEncontrado) {
-      // 3. Salva apenas o usuário atual que logou
       localStorage.setItem('usuarioLogado', JSON.stringify(usuarioEncontrado));
-      
-      // Força um "refresh" na aplicação para a Navbar atualizar
-      window.location.href = '/'; 
+      alert(`Bem-vindo de volta, ${usuarioEncontrado.nome}!`);
+      navigate('/');
+      window.location.reload(); // Para atualizar a Navbar
     } else {
-      alert("E-mail ou senha incorretos!");
+      alert("Email ou senha incorretos!");
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="bg-white p-8 rounded-3xl shadow-lg w-full max-w-md border border-gray-100">
-        <h2 className="text-3xl font-bold text-secondary mb-6 text-center">Entrar</h2>
-        <form onSubmit={handleLogin} className="space-y-4">
-          <input 
-            type="email" 
-            placeholder="Seu e-mail"
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:border-primary"
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <input 
-            type="password" 
-            placeholder="Sua senha"
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:border-primary"
-            onChange={(e) => setSenha(e.target.value)}
-          />
-          <button type="submit" className="w-full bg-primary text-white py-4 rounded-2xl font-bold hover:bg-opacity-90 transition">
-            Entrar
+    <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
+      <div className="bg-white w-full max-w-md rounded-[40px] shadow-2xl overflow-hidden border border-gray-100">
+        
+        {/* Topo do Card com a Marca */}
+        <div className="bg-primary p-10 text-center">
+          <h2 className="text-white text-3xl font-black italic tracking-tighter">Saúde Digital</h2>
+          <p className="text-white/70 text-sm mt-2">Acesse sua conta para agendar</p>
+        </div>
+
+        <form onSubmit={handleLogin} className="p-10 space-y-6">
+          <div>
+            <label className="block text-secondary font-bold mb-2 text-sm">Seu E-mail</label>
+            <input 
+              type="email" 
+              required
+              className="w-full px-5 py-4 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-secondary"
+              placeholder="exemplo@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="block text-secondary font-bold mb-2 text-sm">Sua Senha</label>
+            <input 
+              type="password" 
+              required
+              className="w-full px-5 py-4 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-secondary"
+              placeholder="••••••••"
+              value={senha}
+              onChange={(e) => setSenha(e.target.value)}
+            />
+          </div>
+
+          <button 
+            type="submit"
+            className="w-full bg-secondary text-white py-5 rounded-2xl font-black text-lg shadow-lg hover:bg-opacity-90 transition-all active:scale-95"
+          >
+            ENTRAR NA CONTA
           </button>
+
+          <p className="text-center text-gray-500 text-sm">
+            Ainda não tem conta? {' '}
+            <Link to="/cadastro" className="text-primary font-bold hover:underline">
+              Crie uma agora
+            </Link>
+          </p>
         </form>
-        <p className="mt-6 text-center text-gray-500">
-          Não tem conta? <Link to="/cadastro" className="text-primary font-bold hover:underline">Cadastre-se</Link>
-        </p>
       </div>
     </div>
   );

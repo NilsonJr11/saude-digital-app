@@ -5,72 +5,84 @@ export default function MyAppointments() {
   const [agendamentos, setAgendamentos] = useState([]);
 
   useEffect(() => {
-  const usuario = JSON.parse(localStorage.getItem('usuarioLogado'));
-  const todosAgendamentos = JSON.parse(localStorage.getItem('agendamentos') || '[]');
+    const usuario = JSON.parse(localStorage.getItem('usuarioLogado'));
+    // Usamos sempre a mesma chave: 'agendamentos'
+    const todosAgendamentos = JSON.parse(localStorage.getItem('agendamentos') || '[]');
 
-  if (usuario && usuario.email) {
-    // Comparamos os dois em minúsculo para não ter erro
-    const meusDados = todosAgendamentos.filter(
-      a => a.clienteEmail.toLowerCase() === usuario.email.toLowerCase()
-    );
-    setAgendamentos(meusDados);
-  }
+    if (usuario && usuario.email) {
+      // Ajustado para filtrar pelo email do usuário logado
+      const meusDados = todosAgendamentos.filter(
+        a => a.pacienteEmail?.toLowerCase() === usuario.email.toLowerCase() || 
+             a.clienteEmail?.toLowerCase() === usuario.email.toLowerCase()
+      );
+      setAgendamentos(meusDados);
+    }
   }, []);
 
-  // Lógica para Desmarcar (Remover do localStorage)
   const handleDesmarcar = (id) => {
     if (window.confirm("Tem certeza que deseja desmarcar esta consulta?")) {
-      const novaLista = agendamentos.filter(item => item.id !== id);
-      setAgendamentos(novaLista);
-      localStorage.setItem('meusAgendamentos', JSON.stringify(novaLista));
+      // 1. Filtra a lista local
+      const novaListaLocal = agendamentos.filter(item => item.id !== id);
+      setAgendamentos(novaListaLocal);
+
+      // 2. Filtra a lista global do banco para não apagar consultas de outros usuários
+      const todosAgendamentos = JSON.parse(localStorage.getItem('agendamentos') || '[]');
+      const novaListaGlobal = todosAgendamentos.filter(item => item.id !== id);
+      
+      // 3. Salva de volta na chave correta
+      localStorage.setItem('agendamentos', JSON.stringify(novaListaGlobal));
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="container mx-auto max-w-2xl">
-        <header className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-secondary">Meus Agendamentos</h1>
-          <Link to="/" className="text-primary font-bold hover:underline">← Novo Agendamento</Link>
-        </header>
-
-        {agendamentos.length === 0 ? (
-            <div className="bg-white p-16 rounded-3xl shadow-sm text-center border-2 border-dashed border-gray-100 mt-10">
-                <div className="text-6xl mb-4">📅</div>
-                <h3 className="text-xl font-bold text-secondary mb-2">Nenhuma consulta por aqui</h3>
-                <p className="text-gray-500 mb-8">Você ainda não agendou nenhum horário com nossos especialistas.</p>
-                <Link to="/" className="bg-primary text-white px-8 py-3 rounded-xl font-bold hover:bg-opacity-90 transition">
-                Procurar Médicos
-                </Link>
-            </div>
-            ) : (
-          <div className="space-y-4">
-            {agendamentos.map((item) => (
-              <div key={item.id} className="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-primary flex justify-between items-center">
-                <div>
-                  <h3 className="font-bold text-lg text-secondary">{item.medicoNome}</h3>
-                  <p className="text-primary text-sm font-medium">{item.especialidade}</p>
-                  <p className="text-gray-500 mt-2 text-sm capitalize">
-                    {/* Data formatada com mês por extenso */}
-                    📅 {new Date(item.data + "T00:00:00").toLocaleDateString('pt-BR', {
-                      day: '2-digit',
-                      month: 'long',
-                      year: 'numeric'
-                    })}
-                  </p>
-                </div>
-                
-                <button 
-                  onClick={() => handleDesmarcar(item.id)}
-                  className="text-red-500 hover:bg-red-50 px-4 py-2 rounded-lg text-sm font-bold transition"
-                >
-                  Desmarcar
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+    <div className="max-w-4xl mx-auto p-8 min-h-screen">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-black text-secondary tracking-tighter">Meus Agendamentos</h1>
+        <Link to="/" className="text-primary font-bold hover:underline">
+          + Novo Agendamento
+        </Link>
       </div>
+
+      {agendamentos.length > 0 ? (
+        agendamentos.map((agendamento) => (
+          <div key={agendamento.id} className="bg-white border-l-4 border-primary rounded-2xl shadow-sm p-6 mb-4 hover:shadow-md transition-all">
+            <div className="flex justify-between items-start">
+              
+              <div className="space-y-2">
+                <h3 className="text-xl font-bold text-secondary">{agendamento.medicoNome}</h3>
+                <p className="text-primary font-bold text-sm uppercase">{agendamento.especialidade}</p>
+                
+                <div className="flex gap-4 mt-4 text-gray-500 text-sm font-medium">
+                  <span className="flex items-center gap-1">📅 {agendamento.data}</span>
+                  <span className="flex items-center gap-1">⏰ {agendamento.hora}</span>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mt-3">
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
+                    agendamento.tipo === 'plano' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'
+                  }`}>
+                    {agendamento.tipo === 'plano' ? `Plano: ${agendamento.planoSaude}` : 'Particular'}
+                  </span>
+                  <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-500 text-[10px] font-black uppercase">
+                    📍 {agendamento.unidade || "Unidade Central"}
+                  </span>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => handleDesmarcar(agendamento.id)}
+                className="text-red-500 hover:bg-red-50 px-4 py-2 rounded-xl transition font-black text-xs uppercase tracking-widest"
+              >
+                Desmarcar
+              </button>
+            </div>
+          </div>
+        ))
+      ) : (
+        <div className="text-center py-20 bg-gray-100 rounded-[40px] border-2 border-dashed border-gray-200">
+          <p className="text-gray-400 font-medium">Você ainda não possui agendamentos.</p>
+        </div>
+      )}
     </div>
   );
 }

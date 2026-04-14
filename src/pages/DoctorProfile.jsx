@@ -6,24 +6,17 @@ export default function DoctorProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
   
-  // 1. Primeiro buscamos o médico
   const medico = DOCTORS.find(doc => doc.id === parseInt(id));
-
-  // 2. Depois criamos os estados e variáveis que dependem de lógica
   const [dataConsulta, setDataConsulta] = useState("");
-  const hoje = new Date().toISOString().split('T')[0];
+  const [tipoAtendimento, setTipoAtendimento] = useState('plano');
+  const [dadosPaciente, setDadosPaciente] = useState({
+    nascimento: '',
+    genero: '',
+    planoSaude: '',
+    unidade: 'Unidade Central - Av. Paulista, 1000'
+  });
 
-  // 3. Verificação de segurança: se o médico não existir, para aqui
-  if (!medico) {
-    return (
-      <div className="text-center py-20">
-        <h2 className="text-2xl font-bold">Médico não encontrado.</h2>
-        <button onClick={() => navigate('/')} className="text-primary underline mt-4">
-          Voltar para o início
-        </button>
-      </div>
-    );
-  }
+  const hoje = new Date().toISOString().split('T')[0];
 
   const handleAgendar = () => {
     const usuarioLogadoRaw = localStorage.getItem('usuarioLogado');
@@ -34,28 +27,37 @@ export default function DoctorProfile() {
       return;
     }
 
-    if (!dataConsulta) {
-      alert("Por favor, selecione uma data.");
+    if (!dataConsulta || !dadosPaciente.genero || !dadosPaciente.nascimento) {
+      alert("Por favor, preencha todos os campos obrigatórios.");
       return;
     }
 
     const usuarioLogado = JSON.parse(usuarioLogadoRaw);
+    const agendamentosAntigos = JSON.parse(localStorage.getItem('agendamentos') || '[]');
 
     const novoAgendamento = {
       id: Date.now(),
-      clienteEmail: usuarioLogado.email.toLowerCase(),
+      pacienteEmail: usuarioLogado.email.toLowerCase(),
+      pacienteNome: usuarioLogado.nome,
       medicoNome: medico.nome,
       especialidade: medico.especialidade,
-      data: dataConsulta
+      data: dataConsulta,
+      nascimento: dadosPaciente.nascimento,
+      genero: dadosPaciente.genero,
+      tipo: tipoAtendimento,
+      planoSaude: tipoAtendimento === 'plano' ? dadosPaciente.planoSaude : 'Particular',
+      unidade: dadosPaciente.unidade,
+      status: "Confirmado"
     };
 
-    const agendamentosSalvos = JSON.parse(localStorage.getItem('agendamentos') || '[]');
-    agendamentosSalvos.push(novoAgendamento);
-    localStorage.setItem('agendamentos', JSON.stringify(agendamentosSalvos));
-
+    localStorage.setItem('agendamentos', JSON.stringify([...agendamentosAntigos, novoAgendamento]));
     alert(`Consulta com ${medico.nome} agendada com sucesso!`);
     navigate('/meus-agendamentos');
   };
+
+  if (!medico) {
+    return <div className="text-center py-20 font-bold">Médico não encontrado.</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
@@ -64,59 +66,114 @@ export default function DoctorProfile() {
           ← Voltar
         </button>
 
-        <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
-          {/* Header do Médico */}
-          <div className="bg-primary p-8 text-white flex flex-col md:flex-row items-center gap-6">
-            <div className="w-32 h-32 bg-white/20 rounded-3xl flex items-center justify-center text-4xl font-bold border-4 border-white/30">
+        <div className="bg-white rounded-[40px] shadow-2xl overflow-hidden border border-gray-100">
+          {/* Cabeçalho */}
+          <div className="bg-primary p-10 text-white flex flex-col md:flex-row items-center gap-8">
+            <div className="w-32 h-32 bg-white/20 rounded-3xl flex items-center justify-center text-5xl font-black border-4 border-white/30 shadow-inner">
               {medico.nome[0]}
             </div>
-            <div>
-              <h1 className="text-3xl font-bold">{medico.nome}</h1>
-              <p className="text-xl opacity-90">{medico.especialidade}</p>
-              <div className="mt-2">
-                <span className="bg-yellow-400 text-secondary text-xs font-bold px-2 py-1 rounded-lg">
-                  ⭐ {medico.rating || "5.0"}
-                </span>
-              </div>
+            <div className="text-center md:text-left">
+              <h1 className="text-4xl font-black tracking-tighter">{medico.nome}</h1>
+              <p className="text-xl opacity-80 font-medium uppercase tracking-widest text-sm mt-1">{medico.especialidade}</p>
             </div>
           </div>
 
-          <div className="p-8">
-            {/* Informações de Valor e Localização (O que deixa atrativo!) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                <p className="text-gray-500 text-xs uppercase font-bold mb-1">Valor da Consulta</p>
-                <p className="text-xl font-bold text-secondary">{medico.valor || "R$ 250,00"}</p>
+          <div className="p-10 space-y-10">
+            {/* Seção 1: Valores */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100">
+                <label className="block text-secondary font-black text-xs uppercase mb-2">Local de Atendimento</label>
+                <p className="text-gray-600 font-bold text-sm">📍 {dadosPaciente.unidade}</p>
               </div>
-              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                <p className="text-gray-500 text-xs uppercase font-bold mb-1">Localização</p>
-                <p className="text-sm font-bold text-secondary">{medico.localizacao || "São Paulo - SP"}</p>
+              <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100">
+                <label className="block text-secondary font-black text-xs uppercase mb-2">Valor da Consulta</label>
+                <p className="text-primary text-2xl font-black">{medico.valor || "R$ 350,00"}</p>
               </div>
             </div>
 
-            <h2 className="text-2xl font-bold text-secondary mb-4">Sobre o Especialista</h2>
-            <p className="text-gray-600 mb-8 leading-relaxed">
-              {medico.bio || "Médico especialista focado em atendimento humanizado."}
-            </p>
+            {/* Seção 2: Dados Paciente */}
+            <div className="space-y-6">
+              <h3 className="text-xl font-black text-secondary border-b pb-2">Informações do Paciente</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Data de Nascimento</label>
+                  <input 
+                    type="date" 
+                    className="w-full p-4 rounded-2xl bg-gray-50 border border-gray-100"
+                    onChange={(e) => setDadosPaciente({...dadosPaciente, nascimento: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Gênero</label>
+                  <select 
+                    className="w-full p-4 rounded-2xl bg-gray-50 border border-gray-100"
+                    onChange={(e) => setDadosPaciente({...dadosPaciente, genero: e.target.value})}
+                  >
+                    <option value="">Selecione</option>
+                    <option value="Masculino">Masculino</option>
+                    <option value="Feminino">Feminino</option>
+                    <option value="Outro">Outro</option>
+                  </select>
+                </div>
+              </div>
+            </div>
 
-            <div className="mb-8">
-              <label className="block text-gray-700 font-medium mb-2">
-                Data da Consulta
-              </label>
-              <input 
-                type="date" 
-                min={hoje}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition"
-                value={dataConsulta}
-                onChange={(e) => setDataConsulta(e.target.value)}
-              />
+            {/* Seção 3: Agendamento */}
+            <div className="space-y-6">
+              <h3 className="text-xl font-black text-secondary border-b pb-2">Agendamento e Pagamento</h3>
+              
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Escolha a Data</label>
+                <input 
+                  type="date" 
+                  min={hoje}
+                  className="w-full p-4 rounded-2xl bg-gray-50 border border-gray-100 font-bold"
+                  value={dataConsulta}
+                  onChange={(e) => setDataConsulta(e.target.value)}
+                />
+              </div>
+
+              <div className="flex gap-4">
+                <button 
+                  type="button"
+                  onClick={() => setTipoAtendimento('plano')}
+                  className={`flex-1 py-4 rounded-2xl border-2 font-black transition-all ${tipoAtendimento === 'plano' ? 'border-primary bg-primary/5 text-primary' : 'border-gray-100 text-gray-400'}`}
+                >
+                  CONVÊNIO
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setTipoAtendimento('particular')}
+                  className={`flex-1 py-4 rounded-2xl border-2 font-black transition-all ${tipoAtendimento === 'particular' ? 'border-primary bg-primary/5 text-primary' : 'border-gray-100 text-gray-400'}`}
+                >
+                  PARTICULAR
+                </button>
+              </div>
+
+              {tipoAtendimento === 'plano' && (
+                <div className="animate-fadeIn">
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Selecione seu Convênio</label>
+                  <select 
+                    className="w-full p-4 rounded-2xl bg-gray-50 border-2 border-primary/20"
+                    onChange={(e) => setDadosPaciente({...dadosPaciente, planoSaude: e.target.value})}
+                  >
+                    <option value="">Selecione um plano...</option>
+                    <option value="Unimed">Unimed</option>
+                    <option value="SulAmérica">SulAmérica</option>
+                    <option value="Bradesco Saúde">Bradesco Saúde</option>
+                    <option value="Amil">Grupo Amil</option>
+                    <option value="Porto Saúde">Porto Saúde</option>
+                    <option value="Outro">Outro...</option>
+                  </select>
+                </div>
+              )}
             </div>
 
             <button 
               onClick={handleAgendar}
-              className="w-full bg-secondary text-white py-5 rounded-2xl font-bold text-xl shadow-lg hover:bg-opacity-90 transition active:scale-[0.98]"
+              className="w-full bg-secondary text-white py-6 rounded-[30px] font-black text-xl shadow-xl hover:scale-[1.02] transition-all active:scale-95"
             >
-              Agendar Consulta Agora
+              CONFIRMAR AGENDAMENTO
             </button>
           </div>
         </div>
