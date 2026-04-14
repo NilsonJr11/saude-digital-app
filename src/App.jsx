@@ -10,7 +10,7 @@ import Login from './pages/Login';
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/saude-digital-app">
       {/* A estrutura abaixo (flex flex-col min-h-screen) garante que:
         1. A Navbar fique no topo.
         2. O conteúdo (main) ocupe o espaço restante.
