@@ -7,6 +7,8 @@ import DoctorProfile from './pages/DoctorProfile';
 import MyAppointments from './pages/MyAppointments';
 import NotFound from './pages/NotFound';
 import Login from './pages/Login';
+import AgendamentoExames from './pages/AgendamentoExames';
+import ExamesDetalhes from './pages/ExamesDetalhes'; // Nome novo
 
 function App() {
   return (
@@ -21,6 +23,8 @@ function App() {
         
         <main className="flex-grow">
           <Routes>
+            <Route path="/exames/:id" element={<ExamesDetalhes />} />
+            <Route path="/exames" element={<AgendamentoExames />} />
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/cadastro" element={<Register />} />

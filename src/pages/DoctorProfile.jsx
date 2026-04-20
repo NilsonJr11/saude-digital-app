@@ -53,6 +53,22 @@ export default function DoctorProfile() {
     localStorage.setItem('agendamentos', JSON.stringify([...agendamentosAntigos, novoAgendamento]));
     alert(`Consulta com ${medico.nome} agendada com sucesso!`);
     navigate('/meus-agendamentos');
+
+    const confirmarAgendamento = (dados) => {
+    // 1. Salva no LocalStorage (como você já faz)
+    const banco = JSON.parse(localStorage.getItem('agendamentos') || '[]');
+    localStorage.setItem('agendamentos', JSON.stringify([...banco, dados]));
+
+    // 2. Dispara o WhatsApp (O Gatilho)
+    const msg = `Olá! Confirmo meu agendamento de ${dados.especialidade} com ${dados.medicoNome} para o dia ${dados.data} às ${dados.hora}.`;
+    const url = `https://wa.me/5511999999999?text=${encodeURIComponent(msg)}`;
+    
+    window.open(url, '_blank'); // Abre o Zap em nova aba
+    
+    // 3. Navega para a página de sucesso
+    navigate('/meus-agendamentos');
+  };
+
   };
 
   if (!medico) {

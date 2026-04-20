@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 
+
 export default function Navbar() {
   const [usuario, setUsuario] = useState(null);
   const navigate = useNavigate();
@@ -52,10 +53,15 @@ export default function Navbar() {
         >
           Médicos
         </button>
+            
+            {/* ADICIONE AQUI */}
+            <Link to="/exames" className="text-gray-600 hover:text-primary font-bold transition-colors cursor-pointer">
+                Exames
+            </Link>
 
         {usuario ? (
           <div className="flex items-center gap-4">
-            <Link to="/meus-agendamentos" className="text-gray-600 hover:text-primary font-medium">
+            <Link to="/meus-agendamentos" className="text-gray-600 hover:text-primary font-bold transition-colors cursor-pointer">
               Minhas Consultas
             </Link>
             <div className="h-6 w-[1px] bg-gray-200"></div>

@@ -47,6 +47,12 @@ export default function MyAppointments() {
         agendamentos.map((agendamento) => (
           <div key={agendamento.id} className="bg-white border-l-4 border-primary rounded-2xl shadow-sm p-6 mb-4 hover:shadow-md transition-all">
             <div className="flex justify-between items-start">
+
+              {/* Dentro do seu map no MyAppointments.jsx, ajuste o título e o ícone */}
+              <h3 className="text-xl font-bold text-secondary">
+                {agendamento.especialidade.includes('Exame') ? '🔬 ' : '👨‍⚕️ '}
+                {agendamento.medicoNome}
+              </h3>
               
               <div className="space-y-2">
                 <h3 className="text-xl font-bold text-secondary">{agendamento.medicoNome}</h3>

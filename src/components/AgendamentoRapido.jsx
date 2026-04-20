@@ -61,6 +61,12 @@ export default function AgendamentoRapido() {
         </div>
       )}
 
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 px-4 max-w-7xl mx-auto py-10">
+        {categoriasExames.map((cat) => (
+            <CardCategoria key={cat.id} {...cat} />
+        ))}
+      </div>
+
       {/* Na etapa 3, redirecionamos para o seu DoctorProfile já existente */}
       {etapa === 3 && (
         <div className="text-center py-10">
