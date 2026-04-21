@@ -61,7 +61,8 @@ export const categoriasExames = [
     desc: 'Vacina contra a Covid-19.', 
     icone: '💉',
     tipo: 'vacinas',
-    listaExames: [] // Se não tiver nada ainda, deixe o array vazio assim []
-  },
-  
+    listaExames: [
+      { nome: 'Vacina Covid-19', preco: 'R$ 20,00' }
+    ] // Se não tiver nada ainda, deixe o array vazio assim []
+  }, 
 ];
