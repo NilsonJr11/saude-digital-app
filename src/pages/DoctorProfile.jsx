@@ -2,16 +2,35 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DOCTORS } from '../data/doctors';
 
+// --- FUNÇÕES DE MÁSCARA ---
+const aplicarMascaraCPF = (value) => {
+  return value
+    .replace(/\D/g, '')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,2})/, '$1-$2')
+    .replace(/(-\d{2})\d+?$/, '$1');
+};
+
+const aplicarMascaraCelular = (value) => {
+  return value
+    .replace(/\D/g, '')
+    .replace(/^(\d{2})(\d)/g, '($1) $2')
+    .replace(/(\d{5})(\d)/, '$1-$2')
+    .replace(/(-\d{4})\d+?$/, '$1');
+};
+
 export default function DoctorProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
-  
   const medico = DOCTORS.find(doc => doc.id === parseInt(id));
-  
-  // ESTADOS DO FORMULÁRIO
+
+  // --- 1. ESTADOS ---
+  const [passo, setPasso] = useState(1); 
   const [dataConsulta, setDataConsulta] = useState("");
   const [horaSelecionada, setHoraSelecionada] = useState("");
   const [tipoAtendimento, setTipoAtendimento] = useState('plano');
+  
   const [dadosPaciente, setDadosPaciente] = useState({
     nascimento: '',
     genero: '',
@@ -19,252 +38,241 @@ export default function DoctorProfile() {
     unidade: 'Unidade Central - Av. Paulista, 1000'
   });
 
+  const [dadosPessoais, setDadosPessoais] = useState({
+    nomeCompleto: '',
+    cpf: '',
+    email: '',
+    celular: ''
+  });
+
   const hoje = new Date().toISOString().split('T')[0];
 
-  // Regra do Domingo (Correção para o seletor de data)
+  // --- 2. LÓGICAS DE APOIO ---
   const verificarDomingo = (dataString) => {
     if (!dataString) return false;
-    const data = new Date(dataString + 'T12:00:00'); // Força meio-dia para evitar erro de fuso
+    const data = new Date(dataString + 'T12:00:00');
     return data.getDay() === 0;
   };
 
-  // Dentro do seu componente DoctorProfile, antes do return:
-
-  // 1. Pegar todos os agendamentos do banco
-  const agendamentosNoBanco = JSON.parse(localStorage.getItem('agendamentos') || '[]');
-
-  // 2. Função para verificar se um horário específico já está tomado para este médico nesta data
   const verificarHorarioOcupado = (hora) => {
-    return agendamentosNoBanco.some(agend => 
-      agend.medicoNome === medico.nome && 
-      agend.data === dataConsulta && 
-      agend.hora === hora
-    );
-  };
+  // Busca a lista atualizada do banco local
+  const agendamentosNoBanco = JSON.parse(localStorage.getItem('agendamentos') || '[]');
+  
+  return agendamentosNoBanco.some(agend => 
+    agend.medicoNome === medico.nome && 
+    agend.data === dataConsulta && 
+    agend.hora === hora &&
+    agend.status !== "Cancelado" // Opcional: permite agendar se o anterior foi cancelado
+  );
+};
 
+  // --- 3. FUNÇÃO DE FINALIZAÇÃO ---
   const handleAgendar = () => {
-    const usuarioLogadoRaw = localStorage.getItem('usuarioLogado');
+    const { cpf, nomeCompleto, email, celular } = dadosPessoais;
 
-    if (verificarDomingo(dataConsulta)) {
-    if (tipoAtendimento === 'particular') {
-      alert("Indisponível: Este especialista não atende Particular aos domingos.");
-      return;
-    } else {
-      alert("Unidade Fechada: Agendamentos via Convênio estão disponíveis apenas de Segunda a Sábado.");
-      return;
-    }
-  }
-    
+    if (nomeCompleto.trim().split(' ').length < 2) return alert("Digite nome e sobrenome.");
+    if (cpf.replace(/\D/g, '').length !== 11) return alert("CPF inválido.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return alert("E-mail inválido.");
+    if (celular.replace(/\D/g, '').length < 11) return alert("Celular inválido.");
+
+    const usuarioLogadoRaw = localStorage.getItem('usuarioLogado');
     if (!usuarioLogadoRaw) {
-      alert("Você precisa estar logado para agendar!");
+      alert("Sessão expirada. Faça login novamente.");
       navigate('/login');
       return;
     }
-
-    // Validação de campos obrigatórios
-    if (!dataConsulta || !horaSelecionada || !dadosPaciente.genero || !dadosPaciente.nascimento) {
-      alert("Por favor, preencha: Data, Horário, Nascimento e Gênero.");
-      return;
-    }
-
     const usuarioLogado = JSON.parse(usuarioLogadoRaw);
-    const agendamentosAntigos = JSON.parse(localStorage.getItem('agendamentos') || '[]');
 
     const novoAgendamento = {
       id: Date.now(),
+      ...dadosPessoais,
       pacienteEmail: usuarioLogado.email.toLowerCase(),
-      pacienteNome: usuarioLogado.nome,
       medicoNome: medico.nome,
       especialidade: medico.especialidade,
       data: dataConsulta,
       hora: horaSelecionada,
-      nascimento: dadosPaciente.nascimento,
-      genero: dadosPaciente.genero,
       tipo: tipoAtendimento,
       planoSaude: tipoAtendimento === 'plano' ? (dadosPaciente.planoSaude || 'Não informado') : 'Particular',
       unidade: dadosPaciente.unidade,
       status: "Confirmado"
     };
 
-    // NOVA TRAVA DE CONFLITO
-  const conflito = agendamentosAntigos.some(agend => 
-    agend.medicoNome === medico.nome && 
-    agend.data === dataConsulta && 
-    agend.hora === horaSelecionada
-  );
+    const agendamentosAtuais = JSON.parse(localStorage.getItem('agendamentos') || '[]');
+    localStorage.setItem('agendamentos', JSON.stringify([...agendamentosAtuais, novoAgendamento]));
 
-  if (conflito) {
-    alert("Ops! Alguém acabou de agendar esse horário. Por favor, escolha outro.");
-    return;
-  }
-
-    // Salvando
-    localStorage.setItem('agendamentos', JSON.stringify([...agendamentosAntigos, novoAgendamento]));
-
-    // WhatsApp
-    const msg = `Olá! Confirmo meu agendamento de ${novoAgendamento.especialidade} com ${novoAgendamento.medicoNome} para o dia ${novoAgendamento.data} às ${novoAgendamento.hora}.`;
+    const msg = `Olá! Sou o paciente ${nomeCompleto}. Confirmo meu agendamento com ${medico.nome} para o dia ${dataConsulta} às ${horaSelecionada}.`;
     window.open(`https://wa.me/5511999999999?text=${encodeURIComponent(msg)}`, '_blank');
 
-    alert(`Consulta agendada com sucesso!`);
+    alert("Sucesso! Seu agendamento foi salvo.");
     navigate('/meus-agendamentos');
   };
 
   if (!medico) return <div className="text-center py-20 font-bold">Médico não encontrado.</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
+    <div className="min-h-screen bg-gray-50 py-12 px-4 font-sans text-gray-900">
       <div className="container mx-auto max-w-4xl">
-        <button onClick={() => navigate(-1)} className="text-primary font-bold mb-6 flex items-center gap-2 hover:underline">
-          ← Voltar
+        <button 
+          onClick={() => passo === 2 ? setPasso(1) : navigate(-1)} 
+          className="text-primary font-bold mb-6 flex items-center gap-2 hover:underline transition-all"
+        >
+          ← {passo === 2 ? 'Voltar para Horários' : 'Voltar'}
         </button>
 
         <div className="bg-white rounded-[40px] shadow-2xl overflow-hidden border border-gray-100">
-          {/* CABEÇALHO COM ESTILO RESTAURADO */}
+          
           <div className="bg-primary p-10 text-white flex flex-col md:flex-row items-center gap-8">
             <div className="w-32 h-32 bg-white/20 rounded-3xl flex items-center justify-center text-5xl font-black border-4 border-white/30 shadow-inner">
               {medico.nome[0]}
             </div>
             <div className="text-center md:text-left">
               <h1 className="text-4xl font-black tracking-tighter">{medico.nome}</h1>
-              <p className="text-xl opacity-80 font-medium uppercase tracking-widest text-sm mt-1">{medico.especialidade}</p>
+              <p className="text-xl opacity-80 font-medium uppercase tracking-widest text-xs mt-1">{medico.especialidade}</p>
             </div>
           </div>
 
-          <div className="p-10 space-y-10">
-            {/* SEÇÃO 1: VALORES */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100">
-                <label className="block text-secondary font-black text-xs uppercase mb-2">Local de Atendimento</label>
-                <p className="text-gray-600 font-bold text-sm">📍 {dadosPaciente.unidade}</p>
-              </div>
-              <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100">
-                <label className="block text-secondary font-black text-xs uppercase mb-2">Valor da Consulta</label>
-                <p className="text-primary text-2xl font-black">{medico.valor || "R$ 350,00"}</p>
-              </div>
-            </div>
-
-            {/* SEÇÃO 2: DADOS PACIENTE */}
-            <div className="space-y-6">
-              <h3 className="text-xl font-black text-secondary border-b pb-2">Informações do Paciente</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Data de Nascimento</label>
-                  <input 
-                    type="date" 
-                    className="w-full p-4 rounded-2xl bg-gray-50 border border-gray-100"
-                    value={dadosPaciente.nascimento}
-                    onChange={(e) => setDadosPaciente({...dadosPaciente, nascimento: e.target.value})}
-                  />
+          <div className="p-10">
+            {passo === 1 ? (
+              <div className="space-y-10 animate-fadeIn">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100">
+                    <label className="block text-secondary font-black text-[10px] uppercase mb-2 tracking-widest">Local</label>
+                    <p className="text-gray-600 font-bold text-sm">📍 {dadosPaciente.unidade}</p>
+                  </div>
+                  <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100">
+                    <label className="block text-secondary font-black text-[10px] uppercase mb-2 tracking-widest">Valor</label>
+                    <p className="text-primary text-2xl font-black">{medico.valor || "R$ 350,00"}</p>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Gênero</label>
-                  <select 
-                    className="w-full p-4 rounded-2xl bg-gray-50 border border-gray-100"
-                    value={dadosPaciente.genero}
-                    onChange={(e) => setDadosPaciente({...dadosPaciente, genero: e.target.value})}
-                  >
-                    <option value="">Selecione</option>
-                    <option value="Masculino">Masculino</option>
-                    <option value="Feminino">Feminino</option>
-                    <option value="Outro">Outro</option>
-                  </select>
+
+                <div className="space-y-6">
+                  <h3 className="text-xl font-black text-secondary border-b pb-2">Informações Iniciais</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="date" className="p-4 rounded-2xl bg-gray-50 border border-gray-100 font-bold outline-none focus:border-primary" value={dadosPaciente.nascimento} onChange={(e) => setDadosPaciente({...dadosPaciente, nascimento: e.target.value})} />
+                    <select className="p-4 rounded-2xl bg-gray-50 border border-gray-100 font-bold outline-none focus:border-primary" value={dadosPaciente.genero} onChange={(e) => setDadosPaciente({...dadosPaciente, genero: e.target.value})}>
+                      <option value="">Gênero</option>
+                      <option value="Masculino">Masculino</option>
+                      <option value="Feminino">Feminino</option>
+                    </select>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            {/* SEÇÃO 3: AGENDAMENTO (CALENDÁRIO ESTILO REDE D'OR) */}
-            <div className="space-y-6">
-              <h3 className="text-xl font-black text-secondary border-b pb-2">Agendamento e Pagamento</h3>
-              
-              <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Escolha a Data</label>
-                <input 
-                  type="date" 
-                  min={hoje}
-                  className="w-full p-4 rounded-2xl bg-gray-50 border border-gray-100 font-bold mb-4"
-                  onChange={(e) => {
-                    setDataConsulta(e.target.value);
-                    setHoraSelecionada("");
-                  }}
-                />
+                <div className="space-y-6">
+                  <h3 className="text-xl font-black text-secondary border-b pb-2">Escolha Data e Hora</h3>
+                  <input type="date" min={hoje} className="w-full p-4 rounded-2xl bg-gray-50 border border-gray-200 font-bold mb-4 outline-none focus:border-primary" onChange={(e) => { setDataConsulta(e.target.value); setHoraSelecionada(""); }} />
 
-              {dataConsulta && (
-                <div className="grid grid-cols-3 gap-3 animate-fadeIn">
-                  {[
-                    {h: '08:00', t: 'n'}, {h: '08:30', t: 'e'}, {h: '09:00', t: 'n'}, 
-                    {h: '09:30', t: 'e'}, {h: '10:00', t: 'n'}, {h: '10:30', t: 'n'}
-                  ].map(item => {
-                    const eDomingo = verificarDomingo(dataConsulta);
-                    const ocupado = verificarHorarioOcupado(item.h); // Verifica se já agendaram
+                  {dataConsulta && (
+                    <>
+                      <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { h: '08:00', t: 'n' }, { h: '08:30', t: 'e' }, 
+                        { h: '09:00', t: 'n' }, { h: '09:30', t: 'e' }, 
+                        { h: '10:00', t: 'n' }, { h: '10:30', t: 'e' }
+                      ].map(item => {
+                        const eDom = verificarDomingo(dataConsulta);
+                        const ocupado = verificarHorarioOcupado(item.h);
+                        const selecionado = horaSelecionada === item.h;
 
-                    return (
-                      <button
-                        key={item.h}
-                        type="button"
-                        disabled={eDomingo || ocupado} // Bloqueia se for domingo OU se estiver ocupado
-                        onClick={() => setHoraSelecionada(item.h)}
-                        className={`relative p-3 px-4 rounded-xl border-2 font-bold transition-all flex items-center justify-between 
-                          ${(eDomingo || ocupado) ? 'opacity-30 cursor-not-allowed bg-gray-200 border-transparent' : ''} 
-                          ${horaSelecionada === item.h ? 'border-primary bg-primary text-white' : 'border-gray-50 bg-gray-50 text-gray-600'}`}
-                      >
-                        <span className="text-sm">
-                          {ocupado ? "Ocupado" : item.h} 
-                        </span>
-                        
-                        {item.t === 'e' && !eDomingo && !ocupado && (
-                          <span className={`${horaSelecionada === item.h ? 'bg-white text-primary' : 'bg-orange-500 text-white'} text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center`}>
-                            E
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
+                        return (
+                          <button 
+                            key={item.h} 
+                            // Desabilita se for domingo OU se o horário já estiver no localStorage
+                            disabled={eDom || ocupado} 
+                            onClick={() => setHoraSelecionada(item.h)} 
+                            className={`relative p-3 px-4 rounded-xl border-2 font-bold transition-all flex items-center justify-between 
+                              ${ocupado || eDom 
+                                ? 'bg-gray-100 border-gray-100 text-gray-400 cursor-not-allowed opacity-60' 
+                                : selecionado 
+                                  ? 'bg-primary border-primary text-white shadow-md' 
+                                  : 'bg-white text-gray-700 border-gray-100 hover:border-primary'}`}
+                          >
+                            <span className="text-sm">
+                              {ocupado ? "Ocupado" : item.h}
+                            </span>
+                            
+                            {/* Ícone de Encaixe "E" só aparece se não estiver ocupado */}
+                            {item.t === 'e' && !ocupado && !eDom && (
+                              <span className={`w-5 h-5 rounded-lg text-[10px] font-black flex items-center justify-center 
+                                ${selecionado ? 'bg-white text-primary' : 'bg-orange-100 text-orange-600'}`}>
+                                E
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                      <div className="flex gap-4 mt-4">
+                        <div className="flex items-center gap-2">
+                          <span className="w-5 h-5 flex items-center justify-center bg-orange-100 text-orange-600 text-[10px] font-bold rounded-lg">E</span>
+                          <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Encaixe</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-5 h-5 bg-gray-200 rounded-lg border border-gray-300"></div>
+                          <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Ocupado</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
-              )}
-              </div>
 
-              {/* TIPO DE PAGAMENTO */}
-              <div className="flex gap-4">
-                <button 
-                  type="button"
-                  onClick={() => setTipoAtendimento('plano')}
-                  className={`flex-1 py-4 rounded-2xl border-2 font-black transition-all ${tipoAtendimento === 'plano' ? 'border-primary bg-primary/5 text-primary' : 'border-gray-100 text-gray-400'}`}
-                >
-                  CONVÊNIO
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => setTipoAtendimento('particular')}
-                  className={`flex-1 py-4 rounded-2xl border-2 font-black transition-all ${tipoAtendimento === 'particular' ? 'border-primary bg-primary/5 text-primary' : 'border-gray-100 text-gray-400'}`}
-                >
-                  PARTICULAR
-                </button>
-              </div>
+                <div className="flex gap-4">
+                  <button onClick={() => setTipoAtendimento('plano')} className={`flex-1 py-4 rounded-2xl border-2 font-black transition-all ${tipoAtendimento === 'plano' ? 'border-primary bg-primary/5 text-primary' : 'border-gray-100 text-gray-400'}`}>CONVÊNIO</button>
+                  <button onClick={() => setTipoAtendimento('particular')} className={`flex-1 py-4 rounded-2xl border-2 font-black transition-all ${tipoAtendimento === 'particular' ? 'border-primary bg-primary/5 text-primary' : 'border-gray-100 text-gray-400'}`}>PARTICULAR</button>
+                </div>
 
-              {tipoAtendimento === 'plano' && (
-                <div className="animate-fadeIn">
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Selecione seu Convênio</label>
-                  <select 
-                    className="w-full p-4 rounded-2xl bg-gray-50 border-2 border-primary/20"
-                    onChange={(e) => setDadosPaciente({...dadosPaciente, planoSaude: e.target.value})}
-                  >
-                    <option value="">Selecione um plano...</option>
+                {tipoAtendimento === 'plano' && (
+                  <select className="w-full p-4 rounded-2xl bg-gray-50 border-2 border-primary/20 font-bold outline-none" onChange={(e) => setDadosPaciente({...dadosPaciente, planoSaude: e.target.value})}>
+                    <option value="">Selecione seu plano...</option>
                     <option value="Unimed">Unimed</option>
                     <option value="SulAmérica">SulAmérica</option>
-                    <option value="Bradesco Saúde">Bradesco Saúde</option>
-                    <option value="Amil">Grupo Amil</option>
-                    <option value="Porto Saúde">Porto Saúde</option>
+                    <option value="Bradesco">Bradesco Saúde</option>
                   </select>
-                </div>
-              )}
-            </div>
+                )}
 
-            <button 
-              onClick={handleAgendar}
-              className="w-full bg-secondary text-white py-6 rounded-[30px] font-black text-xl shadow-xl hover:scale-[1.02] transition-all active:scale-95"
-            >
-              CONFIRMAR AGENDAMENTO
-            </button>
+                <button 
+                  onClick={() => {
+                    if(!horaSelecionada || !dataConsulta || !dadosPaciente.genero) return alert("Preencha todos os campos e escolha o horário.");
+                    if(verificarDomingo(dataConsulta)) return alert("Unidade fechada aos domingos.");
+                    setPasso(2);
+                  }}
+                  className="w-full bg-secondary text-white py-6 rounded-[30px] font-black text-xl shadow-xl hover:scale-[1.02] active:scale-95 transition-all"
+                >
+                  PROSSEGUIR PARA CADASTRO
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-8 animate-fadeIn">
+                <div className="bg-primary/5 p-6 rounded-2xl border-l-4 border-primary">
+                  <p className="text-sm text-primary font-bold">📍 Agendamento: <span className="text-secondary">{dataConsulta} às {horaSelecionada}</span></p>
+                  <p className="text-[10px] text-gray-500 mt-1 uppercase font-black">Modalidade: {tipoAtendimento === 'plano' ? `Convênio (${dadosPaciente.planoSaude})` : 'Particular'}</p>
+                </div>
+
+                <h2 className="text-2xl font-black text-secondary border-b pb-4">Dados do Paciente</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase">Nome Completo</label>
+                    <input type="text" placeholder="Nome e Sobrenome" className="w-full p-4 rounded-xl bg-gray-50 border border-gray-200 outline-none focus:border-primary transition-all" value={dadosPessoais.nomeCompleto} onChange={(e) => setDadosPessoais({...dadosPessoais, nomeCompleto: e.target.value})} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase">CPF</label>
+                    <input type="text" placeholder="000.000.000-00" className="w-full p-4 rounded-xl bg-gray-50 border border-gray-200 outline-none focus:border-primary transition-all" value={dadosPessoais.cpf} onChange={(e) => setDadosPessoais({...dadosPessoais, cpf: aplicarMascaraCPF(e.target.value)})} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase">E-mail</label>
+                    <input type="email" placeholder="seuemail@gmail.com" className="w-full p-4 rounded-xl bg-gray-50 border border-gray-200 outline-none focus:border-primary transition-all" value={dadosPessoais.email} onChange={(e) => setDadosPessoais({...dadosPessoais, email: e.target.value})} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase">Celular</label>
+                    <input type="text" placeholder="(11) 99999-9999" className="w-full p-4 rounded-xl bg-gray-50 border border-gray-200 outline-none focus:border-primary transition-all" value={dadosPessoais.celular} onChange={(e) => setDadosPessoais({...dadosPessoais, celular: aplicarMascaraCelular(e.target.value)})} />
+                  </div>
+                </div>
+
+                <button onClick={handleAgendar} className="w-full bg-secondary text-white py-6 rounded-[30px] font-black text-xl shadow-xl hover:scale-[1.02] active:scale-95 transition-all">
+                  FINALIZAR AGENDAMENTO
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

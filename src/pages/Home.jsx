@@ -25,6 +25,8 @@ export default function Home() {
       {/* 2. CARD DE AGENDAMENTO */}
       <div className="container mx-auto max-w-4xl px-4 -mt-20">
         <div className="bg-white rounded-3xl shadow-2xl p-8 border border-gray-100 relative z-10">
+          
+          {/* ... Stepper continua igual ... */}
           <div className="flex justify-between items-center mb-10 border-b border-gray-50 pb-6">
             {[
               { step: 1, label: 'Especialidade' },
@@ -64,6 +66,7 @@ export default function Home() {
               </div>
             )}
 
+            {/* SUBSTUIÇÃO 1: Na lista de escolha do profissional (Etapa 2) */}
             {etapa === 2 && (
               <div className="animate-fadeIn">
                 <div className="flex justify-between items-center mb-6">
@@ -78,12 +81,13 @@ export default function Home() {
                       className="group flex items-center justify-between p-5 rounded-2xl border border-gray-100 bg-white hover:shadow-lg transition-all cursor-pointer"
                     >
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center font-bold text-primary">
-                          {med.nome[0]}
+                        {/* ALTERADO AQUI: Antes era med.nome[0] */}
+                        <div className="w-14 h-14 bg-gray-50 rounded-full flex items-center justify-center text-3xl shadow-inner border border-gray-100">
+                          {med.avatarEmoji || "👨‍⚕️"}
                         </div>
                         <div>
-                          <p className="font-extrabold text-secondary">{med.nome}</p>
-                          <p className="text-xs text-gray-500">{med.localizacao || 'Atendimento presencial'}</p>
+                          <p className="font-extrabold text-secondary text-lg">{med.nome}</p>
+                          <p className="text-xs text-gray-500 font-bold uppercase tracking-tighter">{med.especialidade}</p>
                         </div>
                       </div>
                       <span className="text-primary font-bold">→</span>
@@ -112,7 +116,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* 3. LISTAGEM DE DESTAQUES - AQUI ESTÁ O ALVO DO SCROLL */}
+      {/* SUBSTUIÇÃO 2: Na seção de Médicos em Destaque (Final da página) */}
       <div id="medicos-destaque" className="container mx-auto px-4 mt-24 scroll-mt-20">
         <div className="flex items-center justify-between mb-10">
           <h2 className="text-3xl font-black text-secondary">Médicos em Destaque</h2>
@@ -121,16 +125,21 @@ export default function Home() {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {DOCTORS.slice(0, 4).map((medico) => (
-            <div key={medico.id} className="bg-white rounded-3xl shadow-sm hover:shadow-2xl transition-all duration-300 border border-gray-100 flex flex-col overflow-hidden group">
+            <div key={medico.id} className="bg-white rounded-[40px] shadow-sm hover:shadow-2xl transition-all duration-300 border border-gray-100 flex flex-col overflow-hidden group">
               <div className="p-8 flex flex-col items-center text-center flex-grow">
-                <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center text-3xl font-bold text-primary mb-4 group-hover:bg-primary group-hover:text-white transition-all duration-500">
-                  {medico.nome[0]}
+                
+                {/* ALTERADO AQUI: Antes era o quadrado primário/10 */}
+                <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center text-6xl mb-6 shadow-inner border-4 border-white group-hover:scale-110 transition-transform duration-500">
+                  {medico.avatarEmoji || "👨‍⚕️"}
                 </div>
-                <h3 className="text-xl font-bold text-secondary mb-1">{medico.nome}</h3>
-                <p className="text-primary font-bold text-sm mb-4 uppercase">{medico.especialidade}</p>
-                <div className="bg-yellow-400/20 text-yellow-700 px-3 py-1 rounded-lg text-xs font-black mb-6">
+
+                <h3 className="text-xl font-black text-secondary mb-1">{medico.nome}</h3>
+                <p className="text-primary font-bold text-xs mb-4 uppercase tracking-widest">{medico.especialidade}</p>
+                
+                <div className="bg-yellow-400/20 text-yellow-700 px-3 py-1 rounded-lg text-xs font-black mb-6 flex items-center gap-1">
                   ⭐ {medico.rating || "4.8"}
                 </div>
+
                 <button 
                   onClick={() => navigate(`/medico/${medico.id}`)}
                   className="w-full py-4 bg-gray-50 text-secondary font-bold rounded-2xl group-hover:bg-secondary group-hover:text-white transition-colors"

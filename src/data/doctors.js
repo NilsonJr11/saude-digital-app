@@ -7,8 +7,8 @@ export const DOCTORS = [
     reviews: "100+ avaliações",
     valor: "R$ 350,00",
     localizacao: "Rio de Janeiro - RJ",
-    bio: "Especialista em saúde cardiovascular com mais de 10 anos de experiência."
-       
+    bio: "Especialista em saúde cardiovascular com mais de 10 anos de experiência.",
+    avatarEmoji: "👩‍⚕️"
   },
   {
     id: 2,
@@ -18,7 +18,8 @@ export const DOCTORS = [
     reviews: "90+ avaliações",
     valor: "R$ 250,00",
     localizacao: "São Paulo - SP",
-    bio: "Cuidado humanizado para crianças e adolescentes."
+    bio: "Cuidado humanizado para crianças e adolescentes.",
+    avatarEmoji: "👨‍⚕️"
   },
   {
     id: 3,
@@ -28,7 +29,8 @@ export const DOCTORS = [
     reviews: "80+ avaliações",
     valor: "R$ 300,00",
     localizacao: "São Paulo - SP",
-    bio: "Médico especialista focado em atendimento humanizado."
+    bio: "Médico especialista focado em atendimento humanizado.",
+    avatarEmoji: "👩‍⚕️"
   },
   {
     id: 4,
@@ -38,6 +40,7 @@ export const DOCTORS = [
     reviews: "70+ avaliações",
     valor: "R$ 400,00",
     localizacao: "Rio de Janeiro - RJ",
-    bio: "Especialista em traumatologia e medicina esportiva."
+    bio: "Especialista em traumatologia e medicina esportiva.",
+    avatarEmoji: "👨‍⚕️"
   }
 ];
