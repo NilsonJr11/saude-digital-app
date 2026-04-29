@@ -1,42 +1,58 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import ExamBooking from './pages/ExamBooking';
 import Navbar from './components/Navbar';
-import Footer from './components/Footer';
 import Home from './pages/Home';
-import Register from './pages/Register';
+import MyAppointments from './pages/MyAppointments'; 
+import AdminDashboard from './pages/AdminDashboard'; 
+import DoctorAgenda from './pages/DoctorAgenda'; 
 import DoctorProfile from './pages/DoctorProfile';
-import MyAppointments from './pages/MyAppointments';
-import NotFound from './pages/NotFound';
+import ExamesDetalhes from './pages/ExamesDetalhes';
+import ExamsList from './pages/ExamsList';
+import MedicalRecord from './pages/MedicalRecord';
+import MyPatients from './pages/MyPatients';
+import UserManagement from './pages/UserManagement';
 import Login from './pages/Login';
-import AgendamentoExames from './pages/AgendamentoExames';
-import ExamesDetalhes from './pages/ExamesDetalhes'; // Nome novo
 
 function App() {
-  return (
-    <BrowserRouter basename="/saude-digital-app">
-      {/* A estrutura abaixo (flex flex-col min-h-screen) garante que:
-        1. A Navbar fique no topo.
-        2. O conteúdo (main) ocupe o espaço restante.
-        3. O Footer fique sempre no final da página.
-      */}
-      <div className="min-h-screen flex flex-col bg-gray-50">
-        <Navbar /> 
-        
-        <main className="flex-grow">
-          <Routes>
-            <Route path="/exames/:id" element={<ExamesDetalhes />} />
-            <Route path="/exames" element={<AgendamentoExames />} />
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/cadastro" element={<Register />} />
-            <Route path="/medico/:id" element={<DoctorProfile />} />
-            <Route path="/meus-agendamentos" element={<MyAppointments />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </main>
+  const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'));
 
-        <Footer />
-      </div>
-    </BrowserRouter>
+  return (
+    <Router basename="/saude-digital-app">
+      <Navbar />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/meus-agendamentos" element={<MyAppointments />} />
+        <Route path="/medico/:id" element={<DoctorProfile />} />
+
+        {/* COLOQUE A ROTA DE EXAME AQUI (ANTES DO *) */}
+        <Route path="/exame/:id" element={<ExamBooking />} />
+
+        <Route 
+          path="/admin" 
+          element={usuarioLogado?.role === 'secretaria' ? <AdminDashboard /> : <Navigate to="/" />} 
+        />
+
+        <Route 
+          path="/agenda-medica" 
+          element={usuarioLogado?.role === 'medico' ? <DoctorAgenda /> : <Navigate to="/" />} 
+        />
+        
+        {/* O ASTERISCO PRECISA SER SEMPRE O ÚLTIMO DA LISTA */}
+        <Route path="*" element={<Navigate to="/" />} />
+
+        <Route path="/exames" element={<ExamsList />} /> {/* Uma página simples com as categorias */}
+        <Route path="/exame-detalhes/:id" element={<ExamesDetalhes />} />
+
+        <Route path="/atendimento/:id" element={<MedicalRecord />} />
+
+        <Route path="/meus-pacientes" element={<MyPatients />} />
+
+        <Route path="/gestao-usuarios" element={<UserManagement />} />
+
+        <Route path="/login" element={<Login />} />
+      </Routes>
+    </Router>
   );
 }
 

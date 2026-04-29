@@ -1,87 +1,97 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
-
-export default function Navbar() {
-  const [usuario, setUsuario] = useState(null);
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  useEffect(() => {
-    const dadosUsuario = localStorage.getItem('usuarioLogado');
-    if (dadosUsuario) {
-      setUsuario(JSON.parse(dadosUsuario));
-    }
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem('usuarioLogado');
-    setUsuario(null);
-    navigate('/');
-  };
-
-  // A FUNÇÃO PRECISA FICAR AQUI DENTRO!
-  const handleScrollToMedicos = (e) => {
-    e.preventDefault();
-
-    const scrollToElement = () => {
-      const section = document.getElementById('medicos-destaque');
-      if (section) {
-        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    };
-
-    if (location.pathname !== '/') {
-      navigate('/');
-      setTimeout(scrollToElement, 300);
-    } else {
-      scrollToElement();
-    }
+// 1. O SELETOR DE ROLES (AGORA SEM O "DEFAULT")
+function RoleSelector() {
+  const alternarRole = (novaRole) => {
+    const user = JSON.parse(localStorage.getItem('usuarioLogado')) || { nome: 'Nilson' };
+    const userAtualizado = { ...user, role: novaRole };
+    localStorage.setItem('usuarioLogado', JSON.stringify(userAtualizado));
+    window.location.reload();
   };
 
   return (
-    <header className="flex justify-between items-center py-4 px-8 bg-white shadow-sm sticky top-0 z-50">
-      <Link to="/" className="text-2xl font-bold text-primary italic">
-        Saúde Digital
-      </Link>
+    <div className="fixed bottom-4 right-4 bg-white shadow-2xl rounded-2xl p-4 border border-primary/20 z-[999] flex gap-2 items-center">
+      <span className="text-[10px] font-black text-gray-400 uppercase mr-2">Simular:</span>
+      <button onClick={() => alternarRole('paciente')} className="px-3 py-1 bg-blue-100 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-200 text-[10px]">Paciente</button>
+      <button onClick={() => alternarRole('medico')} className="px-3 py-1 bg-purple-100 text-purple-600 rounded-lg text-xs font-bold hover:bg-purple-200 text-[10px]">Médico</button>
+      <button onClick={() => alternarRole('secretaria')} className="px-3 py-1 bg-green-100 text-green-600 rounded-lg text-xs font-bold hover:bg-green-200 text-[10px]">Secretária</button>
+    </div>
+  );
+}
 
-      <nav className="flex items-center gap-6">
-        {/* Botão de Scroll */}
-        <button 
-          onClick={handleScrollToMedicos}
-          className="text-gray-600 hover:text-primary font-bold transition-colors cursor-pointer"
-        >
-          Médicos
-        </button>
-            
-            {/* ADICIONE AQUI */}
-            <Link to="/exames" className="text-gray-600 hover:text-primary font-bold transition-colors cursor-pointer">
-                Exames
-            </Link>
+// 2. O NAVBAR PRINCIPAL (O ÚNICO DEFAULT)
+export default function Navbar() {
+  const navigate = useNavigate();
+  const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'));
+  const role = usuarioLogado?.role || 'paciente'; // Padrão é paciente
 
-        {usuario ? (
-          <div className="flex items-center gap-4">
-            <Link to="/meus-agendamentos" className="text-gray-600 hover:text-primary font-bold transition-colors cursor-pointer">
-              Minhas Consultas
-            </Link>
-            <div className="h-6 w-[1px] bg-gray-200"></div>
-            <span className="text-secondary font-bold">Olá, {usuario.nome}</span>
-            <button 
-              onClick={handleLogout}
-              className="text-red-500 hover:text-red-700 text-sm font-black uppercase tracking-tighter"
-            >
-              Sair
-            </button>
-          </div>
-        ) : (
-          <Link 
-            to="/login" 
-            className="bg-secondary text-white px-6 py-2 rounded-xl font-bold hover:bg-opacity-90 transition shadow-lg shadow-secondary/20"
-          >
-            Entrar
-          </Link>
-        )}
+  const handleSair = () => {
+    localStorage.removeItem('usuarioLogado');
+    navigate('/login');
+  };
+
+  return (
+    <>
+      <nav className="bg-white border-b border-gray-100 px-8 py-4 flex items-center justify-between sticky top-0 z-50">
+        <Link to="/" className="text-2xl font-black text-primary italic">
+          Saúde Digital
+        </Link>
+
+        <div className="flex items-center gap-8">
+          {/* LINKS DINÂMICOS BASEADOS NA ROLE */}
+          {role === 'paciente' && (
+            <>
+              <Link to="/medicos" className="text-sm font-bold text-secondary hover:text-primary transition-colors">Médicos</Link>
+              <Link to="/exames" className="text-sm font-bold text-secondary hover:text-primary transition-colors">Exames</Link>
+              <Link to="/meus-agendamentos" className="text-sm font-bold text-secondary hover:text-primary transition-colors">Minhas Consultas</Link>
+            </>
+          )}
+
+          {role === 'medico' && (
+            <>
+              <Link to="/agenda-medica" className="text-sm font-bold text-primary hover:underline">Minha Agenda</Link>
+              <Link to="/meus-pacientes" className="text-sm font-bold text-secondary hover:text-primary transition-colors">
+                Meus Pacientes
+              </Link>
+            </>
+          )}
+
+          {role === 'secretaria' && (
+            <>
+              <Link to="/admin" className="text-sm font-bold text-green-600 hover:underline">Painel Geral (Admin)</Link>
+              <Link to="/gestao-usuarios" className="text-sm font-bold text-secondary">Usuários</Link>
+            </>
+          )}
+
+          {/* ÁREA DO PERFIL */}
+          {usuarioLogado ? (
+            <div className="flex items-center gap-4 ml-4 border-l pl-8 border-gray-100">
+              <div className="text-right">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">{role}</p>
+                <p className="text-sm font-black text-secondary">Olá, {usuarioLogado.nome}</p>
+              </div>
+              <button 
+                onClick={() => navigate('/login')}
+                className="bg-primary text-white px-6 py-2 rounded-full font-bold uppercase text-xs"
+              >
+                Entrar
+              </button>
+              <button 
+                onClick={handleSair}
+                className="text-xs font-black text-red-500 hover:bg-red-50 px-3 py-2 rounded-lg transition-all"
+              >
+                SAIR
+              </button>
+            </div>
+          ) : (
+            <Link to="/login" className="bg-primary text-white px-6 py-2 rounded-xl font-black text-xs uppercase shadow-lg shadow-primary/20">Entrar</Link>
+          )}
+        </div>
       </nav>
-    </header>
+
+      {/* Renderiza o seletor apenas em ambiente de desenvolvimento */}
+      <RoleSelector />
+    </>
   );
 }

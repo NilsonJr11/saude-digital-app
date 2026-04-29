@@ -1,75 +1,108 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { UserPlus, LogIn } from 'lucide-react';
 
 export default function Login() {
-  const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
+  const [isRegistro, setIsRegistro] = useState(false);
+  const [formData, setFormData] = useState({ 
+  nome: '', 
+  email: '', 
+  dataNascimento: '', 
+  cpf: '', 
+  sexo: 'Masculino', // Valor padrão
+  role: 'paciente' 
+});
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleAuth = (e) => {
     e.preventDefault();
-    const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
-    const usuarioEncontrado = usuarios.find(u => u.email === email && u.senha === senha);
+    
+    // Pega a lista total de usuários para validar/salvar
+    const usuariosCadastrados = JSON.parse(localStorage.getItem('usuarios') || '[]');
 
-    if (usuarioEncontrado) {
-      localStorage.setItem('usuarioLogado', JSON.stringify(usuarioEncontrado));
-      alert(`Bem-vindo de volta, ${usuarioEncontrado.nome}!`);
-      navigate('/');
-      window.location.reload(); // Para atualizar a Navbar
+    if (isRegistro) {
+      // REGISTRO: Verifica se já existe
+      if (usuariosCadastrados.some(u => u.email === formData.email)) {
+        alert("Este e-mail já está cadastrado!");
+        return;
+      }
+      
+      const novoUsuario = { ...formData, id: Date.now() };
+      const novaLista = [...usuariosCadastrados, novoUsuario];
+      
+      localStorage.setItem('usuarios', JSON.stringify(novaLista));
+      localStorage.setItem('usuarioLogado', JSON.stringify(novoUsuario));
+      window.location.href = "/saude-digital-app/"; // Recarrega para atualizar a Navbar
     } else {
-      alert("Email ou senha incorretos!");
+      // LOGIN: Busca na lista
+      const usuario = usuariosCadastrados.find(u => u.email === formData.email);
+      if (usuario) {
+        localStorage.setItem('usuarioLogado', JSON.stringify(usuario));
+        window.location.href = "/saude-digital-app/";
+      } else {
+        alert("Usuário não encontrado. Crie uma conta!");
+        setIsRegistro(true);
+      }
     }
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
-      <div className="bg-white w-full max-w-md rounded-[40px] shadow-2xl overflow-hidden border border-gray-100">
-        
-        {/* Topo do Card com a Marca */}
-        <div className="bg-primary p-10 text-center">
-          <h2 className="text-white text-3xl font-black italic tracking-tighter">Saúde Digital</h2>
-          <p className="text-white/70 text-sm mt-2">Acesse sua conta para agendar</p>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="bg-white w-full max-w-md rounded-[40px] shadow-2xl p-10">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-black text-secondary italic">Saúde Digital</h2>
+          <p className="text-gray-400 font-bold text-xs uppercase tracking-widest mt-2">
+            {isRegistro ? 'Crie sua conta gratuita' : 'Acesse sua conta'}
+          </p>
         </div>
 
-        <form onSubmit={handleLogin} className="p-10 space-y-6">
-          <div>
-            <label className="block text-secondary font-bold mb-2 text-sm">Seu E-mail</label>
+        <form onSubmit={handleAuth} className="space-y-4">
+          {isRegistro && (
+          <>
             <input 
-              type="email" 
               required
-              className="w-full px-5 py-4 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-secondary"
-              placeholder="exemplo@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Seu nome completo"
+              className="w-full bg-gray-50 p-4 rounded-2xl outline-none focus:ring-2 ring-primary font-bold mb-3"
+              onChange={(e) => setFormData({...formData, nome: e.target.value})}
             />
-          </div>
+            
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <input 
+                required
+                type="date"
+                className="bg-gray-50 p-4 rounded-2xl outline-none focus:ring-2 ring-primary font-bold text-gray-500"
+                onChange={(e) => setFormData({...formData, dataNascimento: e.target.value})}
+              />
+              <input 
+                required
+                placeholder="CPF"
+                className="bg-gray-50 p-4 rounded-2xl outline-none focus:ring-2 ring-primary font-bold"
+                onChange={(e) => setFormData({...formData, cpf: e.target.value})}
+              />
+            </div>
 
-          <div>
-            <label className="block text-secondary font-bold mb-2 text-sm">Sua Senha</label>
-            <input 
-              type="password" 
-              required
-              className="w-full px-5 py-4 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-secondary"
-              placeholder="••••••••"
-              value={senha}
-              onChange={(e) => setSenha(e.target.value)}
-            />
-          </div>
-
-          <button 
-            type="submit"
-            className="w-full bg-secondary text-white py-5 rounded-2xl font-black text-lg shadow-lg hover:bg-opacity-90 transition-all active:scale-95"
-          >
-            ENTRAR NA CONTA
+    <select 
+      className="w-full bg-gray-50 p-4 rounded-2xl outline-none focus:ring-2 ring-primary font-bold mb-3 appearance-none"
+      onChange={(e) => setFormData({...formData, sexo: e.target.value})}
+    >
+      <option value="Masculino">Masculino</option>
+      <option value="Feminino">Feminino</option>
+      <option value="Outro">Outro</option>
+    </select>
+  </>
+)}
+          
+          <button type="submit" className="w-full bg-primary text-white py-4 rounded-2xl font-black shadow-lg flex items-center justify-center gap-2">
+            {isRegistro ? <><UserPlus size={18} /> CADASTRAR</> : <><LogIn size={18} /> ENTRAR</>}
           </button>
-
-          <p className="text-center text-gray-500 text-sm">
-            Ainda não tem conta? {' '}
-            <Link to="/cadastro" className="text-primary font-bold hover:underline">
-              Crie uma agora
-            </Link>
-          </p>
         </form>
+
+        <button 
+          onClick={() => setIsRegistro(!isRegistro)}
+          className="w-full mt-6 text-xs font-black text-gray-400 hover:text-primary transition-all uppercase tracking-widest"
+        >
+          {isRegistro ? 'Já tenho uma conta' : 'Ainda não tenho conta (Registrar)'}
+        </button>
       </div>
     </div>
   );
