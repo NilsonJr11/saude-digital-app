@@ -4,11 +4,21 @@ import { Link, useNavigate } from 'react-router-dom';
 // 1. O SELETOR DE ROLES (AGORA SEM O "DEFAULT")
 function RoleSelector() {
   const alternarRole = (novaRole) => {
-    const user = JSON.parse(localStorage.getItem('usuarioLogado')) || { nome: 'Nilson' };
-    const userAtualizado = { ...user, role: novaRole };
-    localStorage.setItem('usuarioLogado', JSON.stringify(userAtualizado));
-    window.location.reload();
+  const perfisDeTeste = {
+    paciente: { nome: 'Nilson Júnior', email: 'nilson@teste.com', role: 'paciente' },
+    medico: { nome: 'Dr. Arnaldo Silva', email: 'arnaldo@saude.com', role: 'medico' },
+    secretaria: { nome: 'Cláudia (Admin)', email: 'claudia@saude.com', role: 'secretaria' }
   };
+
+  // 1. Pegamos o perfil correto baseado no botão clicado
+  const perfilEscolhido = perfisDeTeste[novaRole];
+
+  // 2. Agora sim, salvamos o objeto correto no localStorage
+  localStorage.setItem('usuarioLogado', JSON.stringify(perfilEscolhido));
+  
+  // 3. Recarregamos a página para aplicar a nova role
+  window.location.reload();
+};
 
   return (
     <div className="fixed bottom-4 right-4 bg-white shadow-2xl rounded-2xl p-4 border border-primary/20 z-[999] flex gap-2 items-center">
@@ -71,12 +81,8 @@ export default function Navbar() {
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">{role}</p>
                 <p className="text-sm font-black text-secondary">Olá, {usuarioLogado.nome}</p>
               </div>
-              <button 
-                onClick={() => navigate('/login')}
-                className="bg-primary text-white px-6 py-2 rounded-full font-bold uppercase text-xs"
-              >
-                Entrar
-              </button>
+              
+              {/* REMOVA o botão "Entrar" daqui de dentro, deixe apenas o SAIR */}
               <button 
                 onClick={handleSair}
                 className="text-xs font-black text-red-500 hover:bg-red-50 px-3 py-2 rounded-lg transition-all"
@@ -85,7 +91,9 @@ export default function Navbar() {
               </button>
             </div>
           ) : (
-            <Link to="/login" className="bg-primary text-white px-6 py-2 rounded-xl font-black text-xs uppercase shadow-lg shadow-primary/20">Entrar</Link>
+            <Link to="/login" className="bg-primary text-white px-6 py-2 rounded-xl font-black text-xs uppercase shadow-lg shadow-primary/20">
+              Entrar
+            </Link>
           )}
         </div>
       </nav>
