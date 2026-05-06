@@ -11,3 +11,62 @@
     @apply bg-gray-50 antialiased;
   }
 }
+
+@media print {
+  /* Esconde tudo que não é o prontuário */
+  .no-print, 
+  nav, 
+  button, 
+  .simulate-bar { 
+    display: none !important; 
+  }
+
+  /* Ajusta o corpo para ocupar a folha A4 toda */
+  body {
+    background: white !important;
+    padding: 0 !important;
+  }
+
+  .max-w-4xl {
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* Garante que o texto da prescrição apareça bem */
+  textarea {
+    border: none !important;
+    background: transparent !important;
+    resize: none;
+  }
+}
+
+/* Ajuste de simetria para o container do calendário */
+.fc {
+  max-width: 100% !important;
+  font-family: inherit !important;
+}
+
+/* Deixa os botões do topo (Mês, Semana, etc) alinhados e com a mesma altura */
+.fc .fc-button {
+  padding: 8px 16px !important;
+  font-weight: 700 !important;
+  text-transform: capitalize !important;
+  border-radius: 12px !important;
+}
+
+/* Remove o scroll horizontal que às vezes quebra a simetria */
+.fc-scroller {
+  overflow: hidden !important;
+}
+
+/* Ajusta o espaço das células para os eventos não ficarem colados na borda */
+.fc-daygrid-day-frame {
+  padding: 4px !important;
+}
+
+/* Garante que o header do calendário tenha o mesmo alinhamento dos seus cards */
+.fc-header-toolbar {
+  margin-bottom: 2rem !important;
+  padding: 0 10px !important;
+}

@@ -5,37 +5,31 @@ import { UserPlus, LogIn } from 'lucide-react';
 export default function Login() {
   const [isRegistro, setIsRegistro] = useState(false);
   const [formData, setFormData] = useState({ 
-  nome: '', 
-  email: '', 
-  dataNascimento: '', 
-  cpf: '', 
-  sexo: 'Masculino', // Valor padrão
-  role: 'paciente' 
-});
+    nome: '', 
+    email: '', 
+    dataNascimento: '', 
+    cpf: '', 
+    sexo: 'Masculino',
+    role: 'paciente' 
+  });
   const navigate = useNavigate();
 
   const handleAuth = (e) => {
     e.preventDefault();
-    
-    // Pega a lista total de usuários para validar/salvar
     const usuariosCadastrados = JSON.parse(localStorage.getItem('usuarios') || '[]');
 
     if (isRegistro) {
-      // REGISTRO: Verifica se já existe
-      if (usuariosCadastrados.some(u => u.email === formData.email)) {
+      if (usuariosCadastrados.some(u => u.email.toLowerCase() === formData.email.toLowerCase())) {
         alert("Este e-mail já está cadastrado!");
         return;
       }
-      
       const novoUsuario = { ...formData, id: Date.now() };
       const novaLista = [...usuariosCadastrados, novoUsuario];
-      
       localStorage.setItem('usuarios', JSON.stringify(novaLista));
       localStorage.setItem('usuarioLogado', JSON.stringify(novoUsuario));
-      window.location.href = "/saude-digital-app/"; // Recarrega para atualizar a Navbar
+      window.location.href = "/saude-digital-app/"; 
     } else {
-      // LOGIN: Busca na lista
-      const usuario = usuariosCadastrados.find(u => u.email === formData.email);
+      const usuario = usuariosCadastrados.find(u => u.email.toLowerCase() === formData.email.toLowerCase());
       if (usuario) {
         localStorage.setItem('usuarioLogado', JSON.stringify(usuario));
         window.location.href = "/saude-digital-app/";
@@ -57,42 +51,83 @@ export default function Login() {
         </div>
 
         <form onSubmit={handleAuth} className="space-y-4">
-          {isRegistro && (
-          <>
+          {/* CAMPO DE E-MAIL (Obrigatório para Login e Registro) */}
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-gray-400 uppercase ml-2">E-mail</label>
             <input 
               required
-              placeholder="Seu nome completo"
-              className="w-full bg-gray-50 p-4 rounded-2xl outline-none focus:ring-2 ring-primary font-bold mb-3"
-              onChange={(e) => setFormData({...formData, nome: e.target.value})}
+              type="email"
+              placeholder="seu@email.com"
+              className="w-full bg-gray-50 p-4 rounded-2xl outline-none focus:ring-2 ring-primary font-bold"
+              value={formData.email}
+              onChange={(e) => setFormData({...formData, email: e.target.value})}
             />
-            
-            <div className="grid grid-cols-2 gap-3 mb-3">
-              <input 
-                required
-                type="date"
-                className="bg-gray-50 p-4 rounded-2xl outline-none focus:ring-2 ring-primary font-bold text-gray-500"
-                onChange={(e) => setFormData({...formData, dataNascimento: e.target.value})}
-              />
-              <input 
-                required
-                placeholder="CPF"
-                className="bg-gray-50 p-4 rounded-2xl outline-none focus:ring-2 ring-primary font-bold"
-                onChange={(e) => setFormData({...formData, cpf: e.target.value})}
-              />
-            </div>
+          </div>
 
-    <select 
-      className="w-full bg-gray-50 p-4 rounded-2xl outline-none focus:ring-2 ring-primary font-bold mb-3 appearance-none"
-      onChange={(e) => setFormData({...formData, sexo: e.target.value})}
-    >
-      <option value="Masculino">Masculino</option>
-      <option value="Feminino">Feminino</option>
-      <option value="Outro">Outro</option>
-    </select>
-  </>
-)}
+          {/* CAMPOS EXCLUSIVOS DE REGISTRO */}
+          {isRegistro && (
+            <div className="animate-in fade-in slide-in-from-top-2 duration-300 space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-gray-400 uppercase ml-2">Nome Completo</label>
+                <input 
+                  required
+                  placeholder="Nome do Usuário"
+                  className="w-full bg-gray-50 p-4 rounded-2xl outline-none focus:ring-2 ring-primary font-bold"
+                  value={formData.nome}
+                  onChange={(e) => setFormData({...formData, nome: e.target.value})}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-gray-400 uppercase ml-2">Nascimento</label>
+                  <input 
+                    required
+                    type="date"
+                    className="w-full bg-gray-50 p-4 rounded-2xl outline-none focus:ring-2 ring-primary font-bold text-gray-500"
+                    onChange={(e) => setFormData({...formData, dataNascimento: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-gray-400 uppercase ml-2">CPF</label>
+                  <input 
+                    required
+                    placeholder="000.000.000-00"
+                    className="w-full bg-gray-50 p-4 rounded-2xl outline-none focus:ring-2 ring-primary font-bold"
+                    onChange={(e) => setFormData({...formData, cpf: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-gray-400 uppercase ml-2">Sexo</label>
+                <select 
+                  className="w-full bg-gray-50 p-4 rounded-2xl outline-none focus:ring-2 ring-primary font-bold appearance-none"
+                  value={formData.sexo}
+                  onChange={(e) => setFormData({...formData, sexo: e.target.value})}
+                >
+                  <option value="Masculino">Masculino</option>
+                  <option value="Feminino">Feminino</option>
+                  <option value="Outro">Outro</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-gray-400 uppercase ml-2">Tipo de Conta</label>
+                <select 
+                  className="w-full bg-gray-50 p-4 rounded-2xl outline-none focus:ring-2 ring-primary font-bold appearance-none"
+                  value={formData.role}
+                  onChange={(e) => setFormData({...formData, role: e.target.value})}
+                >
+                  <option value="paciente">Paciente (Padrão)</option>
+                  <option value="medico">Médico</option>
+                  <option value="secretaria">Secretária / Admin</option>
+                </select>
+              </div>
+            </div>
+          )}
           
-          <button type="submit" className="w-full bg-primary text-white py-4 rounded-2xl font-black shadow-lg flex items-center justify-center gap-2">
+          <button type="submit" className="w-full bg-primary text-white py-5 rounded-3xl font-black shadow-lg flex items-center justify-center gap-2 hover:scale-[1.02] transition-all">
             {isRegistro ? <><UserPlus size={18} /> CADASTRAR</> : <><LogIn size={18} /> ENTRAR</>}
           </button>
         </form>

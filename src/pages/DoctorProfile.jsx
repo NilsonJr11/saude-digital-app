@@ -77,9 +77,9 @@ export default function DoctorProfile() {
     }
   };
 
-  const filtradosPorMedico = todosAgendamentos.filter(agend => 
-  agend.medicoNome.trim() === usuarioLogado?.nome.trim()
-);
+  /*const filtradosPorMedico = todosAgendamentos.filter(agend => 
+  //agend.medicoNome.trim() === usuarioLogado?.nome.trim()
+);*/
 
   if (!medico) return <div className="text-center py-20 font-bold">Médico não encontrado.</div>;
 
@@ -170,7 +170,9 @@ export default function DoctorProfile() {
                   {usuarioLogado && (
                     <div className="bg-gray-50 p-6 rounded-[25px] grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div><p className="text-[10px] font-black text-primary uppercase">Nome</p><p className="font-bold">{usuarioLogado.nome}</p></div>
-                      <div><p className="text-[10px] font-black text-gray-400 uppercase">CPF</p><p className="font-bold">{usuarioLogado.cpf}</p></div>
+                      <div><p className="text-[10px] font-black text-primary uppercase">CPF</p><p className="font-bold">{usuarioLogado.cpf}</p></div>
+                      <div><p className="text-[10px] font-black text-primary uppercase">E-mail</p><p className="font-bold">{usuarioLogado.email}</p></div>
+                      <div><p className="text-[10px] font-black text-primary uppercase">Telefone</p><p className="font-bold">{usuarioLogado.telefone}</p></div> 
                     </div>
                   )}
                 </div>
