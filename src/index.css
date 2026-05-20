@@ -12,7 +12,8 @@
   }
 }
 
- @media print { */
+ /* --- CONFIGURAÇÕES DE IMPRESSÃO DO PRONTUÁRIO --- */
+@media print {
   /* Esconde tudo que não é o prontuário */
   .no-print, 
   nav, 
@@ -20,7 +21,7 @@
   .simulate-bar { 
     display: none !important; 
   }
-
+  
   /* Ajusta o corpo para ocupar a folha A4 toda */
   body {
     background: white !important;
