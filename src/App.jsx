@@ -42,7 +42,7 @@ export default function App() {
   };
 
   return (
-    <BrowserRouter basename="/saude-digital-app">
+    <BrowserRouter>
       {/* SE ESTIVER LOGADO, MOSTRA UM HEADER CORPORATIVO EM CIMA DE TUDO */}
       {user && (
         <header className="bg-slate-900 text-white px-8 py-4 flex justify-between items-center font-sans shadow-md">
