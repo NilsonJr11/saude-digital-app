@@ -5,7 +5,8 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   build: {
-    // Evita que avisos de variáveis não usadas travem a geração do build final
+    // Força o Vite a usar o esbuild (muito mais tolerante) em vez do lightningcss
+    cssMinify: 'esbuild',
     chunkSizeWarningLimit: 1600,
   }
 });
