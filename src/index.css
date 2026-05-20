@@ -1,4 +1,6 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @theme {
   --color-primary: #0d9488;
@@ -21,7 +23,7 @@
   .simulate-bar { 
     display: none !important; 
   }
-  
+
   /* Ajusta o corpo para ocupar a folha A4 toda */
   body {
     background: white !important;
