@@ -1,143 +1,142 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserPlus, LogIn } from 'lucide-react';
+import { ShieldAlert } from 'lucide-react';
 
 export default function Login() {
-  const [isRegistro, setIsRegistro] = useState(false);
-  const [formData, setFormData] = useState({ 
-    nome: '', 
-    email: '', 
-    dataNascimento: '', 
-    cpf: '', 
-    sexo: 'Masculino',
-    role: 'paciente' 
-  });
+  const [email, setEmail] = useState('');
+  const [erro, setErro] = useState('');
   const navigate = useNavigate();
 
-  const handleAuth = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    const usuariosCadastrados = JSON.parse(localStorage.getItem('usuarios') || '[]');
+    setErro('');
 
-    if (isRegistro) {
-      if (usuariosCadastrados.some(u => u.email.toLowerCase() === formData.email.toLowerCase())) {
-        alert("Este e-mail já está cadastrado!");
-        return;
-      }
-      const novoUsuario = { ...formData, id: Date.now() };
-      const novaLista = [...usuariosCadastrados, novoUsuario];
-      localStorage.setItem('usuarios', JSON.stringify(novaLista));
-      localStorage.setItem('usuarioLogado', JSON.stringify(novoUsuario));
-      window.location.href = "/saude-digital-app/"; 
-    } else {
-      const usuario = usuariosCadastrados.find(u => u.email.toLowerCase() === formData.email.toLowerCase());
-      if (usuario) {
-        localStorage.setItem('usuarioLogado', JSON.stringify(usuario));
-        window.location.href = "/saude-digital-app/";
+    try {
+      const response = await fetch('http://localhost/saude-digital-api/login.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const dados = await response.json();
+
+      if (dados.success) {
+        // Guarda a sessão no localStorage
+        localStorage.setItem('usuario_logado', JSON.stringify(dados.user));
+        
+        // REDIRECIONAMENTO CORRETO USANDO O NAVIGATE DO REAСТ
+        if (dados.user.perfil === 'secretaria') {
+          navigate('/dashboard-secretaria');
+        } else if (dados.user.perfil === 'medico') {
+          navigate('/agenda-medica');
+        } else {
+          navigate('/');
+        }
       } else {
-        alert("Usuário não encontrado. Crie uma conta!");
-        setIsRegistro(true);
+        setErro(dados.error);
       }
+    } catch (error) {
+      setErro('Falha ao conectar com o servidor da clínica.');
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-md rounded-[40px] shadow-2xl p-10">
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 font-sans">
+      <div className="bg-white p-10 rounded-[40px] shadow-2xl w-full max-w-md border border-gray-100">
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-black text-secondary italic">Saúde Digital</h2>
-          <p className="text-gray-400 font-bold text-xs uppercase tracking-widest mt-2">
-            {isRegistro ? 'Crie sua conta gratuita' : 'Acesse sua conta'}
-          </p>
+          <h2 className="text-3xl font-black text-slate-900 italic tracking-tighter">Saúde Digital</h2>
+          <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mt-1">Portal Corporativo Interno</p>
         </div>
 
-        <form onSubmit={handleAuth} className="space-y-4">
-          {/* CAMPO DE E-MAIL (Obrigatório para Login e Registro) */}
-          <div className="space-y-1">
-            <label className="text-[10px] font-black text-gray-400 uppercase ml-2">E-mail</label>
+        {erro && (
+          <div className="mb-6 p-4 bg-red-50 rounded-2xl flex items-center gap-3 text-red-600 font-bold text-xs border border-red-100">
+            <ShieldAlert size={16} />
+            <span>{erro}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleLogin} className="space-y-5">
+          <div>
+            <label className="text-[10px] font-black text-gray-400 uppercase ml-2">E-mail Corporativo</label>
             <input 
+              type="email" 
               required
-              type="email"
-              placeholder="seu@email.com"
-              className="w-full bg-gray-50 p-4 rounded-2xl outline-none focus:ring-2 ring-primary font-bold"
-              value={formData.email}
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              placeholder="exemplo@saude.com"
+              className="w-full p-4 mt-1 bg-gray-50 border-none rounded-2xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
           </div>
 
-          {/* CAMPOS EXCLUSIVOS DE REGISTRO */}
-          {isRegistro && (
-            <div className="animate-in fade-in slide-in-from-top-2 duration-300 space-y-4">
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-gray-400 uppercase ml-2">Nome Completo</label>
-                <input 
-                  required
-                  placeholder="Nome do Usuário"
-                  className="w-full bg-gray-50 p-4 rounded-2xl outline-none focus:ring-2 ring-primary font-bold"
-                  value={formData.nome}
-                  onChange={(e) => setFormData({...formData, nome: e.target.value})}
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-gray-400 uppercase ml-2">Nascimento</label>
-                  <input 
-                    required
-                    type="date"
-                    className="w-full bg-gray-50 p-4 rounded-2xl outline-none focus:ring-2 ring-primary font-bold text-gray-500"
-                    onChange={(e) => setFormData({...formData, dataNascimento: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-gray-400 uppercase ml-2">CPF</label>
-                  <input 
-                    required
-                    placeholder="000.000.000-00"
-                    className="w-full bg-gray-50 p-4 rounded-2xl outline-none focus:ring-2 ring-primary font-bold"
-                    onChange={(e) => setFormData({...formData, cpf: e.target.value})}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-gray-400 uppercase ml-2">Sexo</label>
-                <select 
-                  className="w-full bg-gray-50 p-4 rounded-2xl outline-none focus:ring-2 ring-primary font-bold appearance-none"
-                  value={formData.sexo}
-                  onChange={(e) => setFormData({...formData, sexo: e.target.value})}
-                >
-                  <option value="Masculino">Masculino</option>
-                  <option value="Feminino">Feminino</option>
-                  <option value="Outro">Outro</option>
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-gray-400 uppercase ml-2">Tipo de Conta</label>
-                <select 
-                  className="w-full bg-gray-50 p-4 rounded-2xl outline-none focus:ring-2 ring-primary font-bold appearance-none"
-                  value={formData.role}
-                  onChange={(e) => setFormData({...formData, role: e.target.value})}
-                >
-                  <option value="paciente">Paciente (Padrão)</option>
-                  <option value="medico">Médico</option>
-                  <option value="secretaria">Secretária / Admin</option>
-                </select>
-              </div>
-            </div>
-          )}
-          
-          <button type="submit" className="w-full bg-primary text-white py-5 rounded-3xl font-black shadow-lg flex items-center justify-center gap-2 hover:scale-[1.02] transition-all">
-            {isRegistro ? <><UserPlus size={18} /> CADASTRAR</> : <><LogIn size={18} /> ENTRAR</>}
+          <button type="submit" className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-md shadow-xl hover:bg-slate-800 transition-all">
+            ACESSAR PAINEL
           </button>
         </form>
 
-        <button 
-          onClick={() => setIsRegistro(!isRegistro)}
-          className="w-full mt-6 text-xs font-black text-gray-400 hover:text-primary transition-all uppercase tracking-widest"
-        >
-          {isRegistro ? 'Já tenho uma conta' : 'Ainda não tenho conta (Registrar)'}
-        </button>
+        {/* SEÇÃO DE ACESSOS RÁPIDOS INTERATIVOS */}
+        <div className="mt-8 text-center border-t border-gray-100 pt-6">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">
+            Acessos Rápidos de Teste (Clique para preencher):
+          </p>
+          
+          <div className="flex flex-col gap-2 max-w-xs mx-auto text-left bg-slate-50 p-3 rounded-2xl border border-gray-100">
+            {/* Perfil Secretaria */}
+            <div className="flex justify-between items-center text-[11px]">
+              <span className="font-bold text-slate-500">Secretaria:</span>
+              <code 
+                onClick={() => setEmail('secretaria@saude.com')}
+                className="bg-white px-2 py-0.5 rounded border border-gray-200 text-indigo-600 font-mono font-bold cursor-pointer hover:bg-indigo-50 hover:border-indigo-200 transition-colors"
+                title="Clique para preencher"
+              >
+                secretaria@saude.com
+              </code>
+            </div>
+
+            {/* Médicos Fixos Cadastrados no Sistema */}
+            <div className="flex justify-between items-center text-[11px]">
+              <span className="font-bold text-slate-500">Dra. Ana (Cardio):</span>
+              <code 
+                onClick={() => setEmail('ana.silva@saude.com')}
+                className="bg-white px-2 py-0.5 rounded border border-gray-200 text-purple-600 font-mono font-bold cursor-pointer hover:bg-purple-50 hover:border-purple-200 transition-colors"
+                title="Clique para preencher"
+              >
+                ana.silva@saude.com
+              </code>
+            </div>
+
+            <div className="flex justify-between items-center text-[11px]">
+              <span className="font-bold text-slate-500">Dr. Marcos (Pediatra):</span>
+              <code 
+                onClick={() => setEmail('marcos.souza@saude.com')}
+                className="bg-white px-2 py-0.5 rounded border border-gray-200 text-purple-600 font-mono font-bold cursor-pointer hover:bg-purple-50 hover:border-purple-200 transition-colors"
+                title="Clique para preencher"
+              >
+                marcos.souza@saude.com
+              </code>
+            </div>
+
+            <div className="flex justify-between items-center text-[11px]">
+              <span className="font-bold text-slate-500">Dra. Julia (Clínica):</span>
+              <code 
+                onClick={() => setEmail('julia.lins@saude.com')}
+                className="bg-white px-2 py-0.5 rounded border border-gray-200 text-purple-600 font-mono font-bold cursor-pointer hover:bg-purple-50 hover:border-purple-200 transition-colors"
+                title="Clique para preencher"
+              >
+                julia.lins@saude.com
+              </code>
+            </div>
+
+            <div className="flex justify-between items-center text-[11px]">
+              <span className="font-bold text-slate-500">Dr. Ricardo (Orto):</span>
+              <code 
+                onClick={() => setEmail('ricardo.vaz@saude.com')}
+                className="bg-white px-2 py-0.5 rounded border border-gray-200 text-purple-600 font-mono font-bold cursor-pointer hover:bg-purple-50 hover:border-purple-200 transition-colors"
+                title="Clique para preencher"
+              >
+                ricardo.vaz@saude.com
+              </code>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

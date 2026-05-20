@@ -12,7 +12,7 @@
   }
 }
 
-@media print {
+ @media print { */
   /* Esconde tudo que não é o prontuário */
   .no-print, 
   nav, 
@@ -41,32 +41,291 @@
   }
 }
 
-/* Ajuste de simetria para o container do calendário */
+/* --- RESET E ESTILIZAÇÃO FULLCALENDAR --- */
+
 .fc {
   max-width: 100% !important;
   font-family: inherit !important;
 }
 
-/* Deixa os botões do topo (Mês, Semana, etc) alinhados e com a mesma altura */
-.fc .fc-button {
+/* 1. Botões do Topo - Estilo Pílula */
+.fc .fc-button-primary {
+  background-color: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #64748b !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  font-size: 10px !important;
+  letter-spacing: 0.1em !important;
   padding: 8px 16px !important;
-  font-weight: 700 !important;
-  text-transform: capitalize !important;
   border-radius: 12px !important;
+  transition: all 0.2s ease;
 }
 
-/* Remove o scroll horizontal que às vezes quebra a simetria */
+.fc .fc-button-primary:hover {
+  background-color: #6366f1 !important;
+  color: white !important;
+  border-color: #6366f1 !important;
+}
+
+.fc .fc-button-active {
+  background-color: #1e293b !important;
+  border-color: #1e293b !important;
+  color: white !important;
+}
+
+/* 2. Ajuste dos Cards Roxos (Eventos) */
+/* Aqui removemos a "grossura" excessiva */
+.fc-event {
+  margin: 2px 4px !important;
+  padding: 2px 8px !important;
+  border-radius: 6px !important;
+  border: none !important;
+  background-color: #6366f1 !important; /* Indigo 500 */
+  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.1);
+}
+
+.fc-event-title {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  line-height: 1.4 !important;
+  white-space: nowrap !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 3. Ajuste da Grade (Linhas e Células) */
+.fc-theme-standard td, .fc-theme-standard th {
+  border: 1px solid #f1f5f9 !important;
+}
+
+.fc .fc-daygrid-day-frame {
+  min-height: 110px !important; /* Altura fixa para manter simetria */
+  padding: 4px !important;
+}
+
 .fc-scroller {
   overflow: hidden !important;
 }
 
-/* Ajusta o espaço das células para os eventos não ficarem colados na borda */
-.fc-daygrid-day-frame {
-  padding: 4px !important;
-}
-
-/* Garante que o header do calendário tenha o mesmo alinhamento dos seus cards */
 .fc-header-toolbar {
   margin-bottom: 2rem !important;
-  padding: 0 10px !important;
+  padding: 0 5px !important;
 }
+
+/* 1. Ajuste específico para visões de Agenda (Dia/Semana) */
+.fc-timegrid-event {
+  margin: 1px 2px !important;
+  border-radius: 4px !important;
+  min-height: 20px !important; /* Impede que eventos curtos sumam */
+}
+
+/* 2. Garante que o conteúdo interno não quebre o layout */
+.fc-timegrid-event .fc-event-main {
+  padding: 4px !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* 3. Ajuste para a visualização de LISTA (Ano) */
+/* Na imagem 20-00-30, os eventos estão ocupando a largura toda de forma bruta */
+.fc-list-event {
+  cursor: pointer;
+}
+
+.fc-list-event-title {
+  font-weight: 700 !important;
+  color: #1e293b !important;
+}
+
+/* 4. IMPORTANTE: Remova qualquer 'height: 100%' dos eventos 
+   Isso evita que eles tentem 'explodir' para fora da célula */
+.fc-v-event .fc-event-main {
+  flex-grow: 0 !important;
+}
+
+/* 5. Ajuste de tipografia para as visões de grade de tempo */
+.fc-timegrid-event .fc-event-title {
+  white-space: normal !important; /* Aqui permitimos quebra se o bloco for grande */
+  font-size: 10px !important;
+}
+
+/* --- AJUSTE DOS CARDS (EVENTOS) - VERSÃO SLIM MAS LEÍVEL --- */
+
+/* 1. O container do evento: removemos 'nowrap' aqui para permitir flexibilidade */
+.fc-event {
+  margin: 1px 2px !important;
+  border-radius: 4px !important;
+  border: none !important;
+  background-color: #6366f1 !important;
+  box-shadow: 0 1px 3px rgba(99, 102, 241, 0.1) !important;
+}
+
+/* 2. O conteúdo interno: aumentamos o padding para dar 'respiro' */
+.fc-event .fc-event-main {
+  padding: 4px 8px !important; /* Aumentado padding interno */
+}
+
+/* 3. O Horário: deixamos ele menor para não brigar com o nome */
+.fc-event-time {
+  font-size: 9px !important;
+  font-weight: 500 !important;
+  opacity: 0.8;
+}
+
+/* 4. O Título (Nome do Paciente): aqui está o segredo */
+.fc-event-title {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  line-height: 1.3 !important;
+  color: white !important;
+  
+  /* USAMOS ESTE SELETOR PARA NÃO CORTAR AS LETRAS */
+  white-space: normal !important; /* Permite que o texto 'empurre' a altura da linha se necessário */
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* Permite até 2 linhas de texto no card */
+  -webkit-box-orient: vertical;
+  overflow: hidden; /* Corta o excesso com reticências se passar de 2 linhas */
+}
+
+/* 5. Ajuste para a visualização de LISTA (Ano) */
+.fc-list-event-title {
+  font-weight: 700 !important;
+  color: #1e293b !important;
+}
+
+/* --- AJUSTE DE CONTRASTE DOS HORÁRIOS --- */
+
+/* Força o horário a ficar branco e legível sobre o fundo roxo */
+.fc-event-time {
+  color: rgba(255, 255, 255, 0.9) !important; /* Branco com leve transparência para elegância */
+  font-weight: 600 !important;
+  margin-right: 4px !important; /* Dá um espacinho do nome do paciente */
+  font-variant-numeric: tabular-nums; /* Mantém os números alinhados */
+}
+
+/* Garante que o ponto (dot) que o FullCalendar às vezes coloca também seja branco */
+.fc-daygrid-event-dot {
+  border-color: white !important;
+}
+
+/* No modo de Lista (Ano), o texto deve voltar a ser escuro para contrastar com o fundo branco */
+.fc-list-event-time, 
+.fc-list-event-title {
+  color: #1e293b !important;
+}
+
+/* Ajuste fino para o título não 'colar' no horário */
+.fc-event-title {
+  color: #ffffff !important;
+}
+
+/* --- PADRONIZAÇÃO DE CONTRASTE (TODAS AS VISÕES) --- */
+
+/* 1. Seleciona o horário e o título em QUALQUER tipo de evento (Mês, Semana, Dia, Ano, Lista) */
+.fc-event-time, 
+.fc-event-title,
+.fc-list-event-time,
+.fc-list-event-title {
+  color: #ffffff !important; /* Branco puro e opaco para máximo contraste */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); /* Sombra sutil para destacar a letra */
+}
+
+/* 2. Ajuste específico para garantir que o horário fique bem visível sobre o roxo escuro */
+.fc-event-time {
+  font-weight: 700 !important;
+  opacity: 1 !important; /* Remove qualquer transparência anterior */
+}
+
+/* --- AJUSTE DINÂMICO PARA A LISTA (ANO) --- */
+
+/* 1. Estado Normal (Branco sobre o fundo roxo da bolinha/item) */
+.fc-list-event-time, 
+.fc-list-event-title {
+  color: #ffffff !important;
+  transition: color 0.2s ease; /* Transição suave */
+}
+
+/* 2. Estado Hover (Quando o mouse passa por cima da linha) */
+/* O seletor .fc-list-event:hover atinge a linha inteira */
+.fc-list-event:hover .fc-list-event-time,
+.fc-list-event:hover .fc-list-event-title {
+  color: #1e293b !important; /* Cor secundária (quase preto) para dar contraste */
+}
+
+/* 3. Garante que o fundo da linha no hover tenha um contraste bom */
+.fc-list-event:hover td {
+  background-color: #f1f5f9 !important; /* Cinza bem clarinho no fundo */
+}
+
+/* 4. Mantém a bolinha roxa mesmo no hover para não perder a identidade */
+.fc-list-event:hover .fc-list-event-dot {
+  border-color: #6366f1 !important;
+}
+
+/* --- ESTILO DO RODAPÉ (Puro CSS para evitar erros) --- */
+.main-footer {
+  background-color: white;
+  border-top: 2px solid rgba(13, 148, 136, 0.2); /* Cor primary com opacidade */
+  padding: 2.5rem 0;
+  margin-top: auto;
+}
+
+.footer-content {
+  max-width: 72rem; /* Equivalente ao max-w-6xl */
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* Responsividade para o Flex do Footer */
+@media (min-width: 768px) {
+  .footer-content {
+    flex-direction: row;
+  }
+}
+
+.footer-logo-text {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #1e293b; /* Slate 800 */
+  font-style: italic;
+  letter-spacing: -0.05em;
+}
+
+.footer-link-green {
+  color: var(--color-primary) !important;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #0d9488 !important; /* USA SUA VARIÁVEL VERDE */
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: color 0.2s;
+}
+
+.footer-link-green:hover {
+  color: var(--color-secondary);
+}
+
+.footer-copyright {
+  font-size: 10px;
+  font-weight: 500;
+  color: #94a3b8;
+  text-transform: uppercase;
+  text-align: right;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
