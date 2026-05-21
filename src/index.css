@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* No Tailwind v4, estilize o body direto, sem usar o @layer base ou @apply */
+body {
+  background-color: var(--color-gray-50, #f9fafb);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 @theme {
   --color-primary: #0d9488;
   --color-secondary: #1e293b;
