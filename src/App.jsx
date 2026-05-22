@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'; // 👈 Adicionado useNavigate aqui
 import Login from './pages/Login';
 import DashboardSecretaria from './pages/DashboardSecretaria';
 import AgendaMedica from './pages/AgendaMedica';
@@ -7,47 +7,46 @@ import MedicalRecord from './pages/MedicalRecord';
 import MyAppointments from './pages/MyAppointments';
 import Register from './pages/Register';
 
-// Componente para proteger as rotas (Só deixa entrar se estiver logado com o perfil certo)
+// Componente para proteger as rotas
 function RotaProtegida({ children, perfilRequerido }) {
   const usuarioLogado = JSON.parse(localStorage.getItem('usuario_logado'));
 
   if (!usuarioLogado) {
-    // Se não estiver logado, chuta de volta para o login
     return <Navigate to="/login" replace />;
   }
 
   if (perfilRequerido && usuarioLogado.perfil !== perfilRequerido) {
-    // Se logou com o perfil errado, chuta para a página inicial correspondente
     return <Navigate to={usuarioLogado.perfil === 'secretaria' ? "/dashboard-secretaria" : "/agenda-medica"} replace />;
   }
 
   return children;
 }
 
-export default function App() {
+// 📦 Criamos um componente interno para podermos usar o hook useNavigate com segurança
+function ConteudoApp() {
   const [user, setUser] = useState(null);
+  const navigate = useNavigate(); // 👈 Inicializa o navegador do React
 
   useEffect(() => {
-    // Verifica se já existe alguém logado ao carregar o app
     const usuario = localStorage.getItem('usuario_logado');
     if (usuario) {
       setUser(JSON.parse(usuario));
     }
   }, []);
 
-  // Função para fazer Logoff do sistema
+  // Função para fazer Logoff corrigida sem caminhos fixos antigos!
   const handleLogout = () => {
     localStorage.removeItem('usuario_logado');
-    window.location.href = '/saude-digital-app/login';
+    setUser(null); // Limpa o estado local
+    navigate('/login'); // 👈 Navegação limpa e correta para a Vercel
   };
 
   return (
-    <BrowserRouter>
-      {/* SE ESTIVER LOGADO, MOSTRA UM HEADER CORPORATIVO EM CIMA DE TUDO */}
+    <>
+      {/* SE ESTIVER LOGADO, MOSTRA O HEADER CORPORATIVO */}
       {user && (
         <header className="bg-slate-900 text-white px-8 py-4 flex justify-between items-center font-sans shadow-md">
           <div className="flex items-center gap-3">
-            {/* Nova Marca Autêntica Livre de Plágio */}
             <div className="flex flex-col">
               <span className="font-black text-lg italic tracking-tighter text-white uppercase">
                 Saúde<span className="text-indigo-400">Digital</span> Pro
@@ -73,9 +72,7 @@ export default function App() {
         </header>
       )}
 
-      {/* APENAS UM BLOCO DE ROUTES DELEGA TUDO AGORA */}
       <Routes>
-        {/* Rota Padrão: Redireciona para o login ou para o painel se já estiver logado */}
         <Route path="/" element={
           user ? (
             <Navigate to={user.perfil === 'secretaria' ? "/dashboard-secretaria" : "/agenda-medica"} replace />
@@ -84,31 +81,36 @@ export default function App() {
           )
         } />
 
-        {/* Rota de Login Pública */}
         <Route path="/login" element={<Login />} />
 
-        {/* Rota Privada da Secretária */}
         <Route path="/dashboard-secretaria" element={
           <RotaProtegida perfilRequerido="secretaria">
             <DashboardSecretaria />
           </RotaProtegida>
         } />
 
-        {/* Rota Privada do Médico - AGORA DIRECIONANDO PARA O COMPONENTE REAL */}
         <Route path="/agenda-medica" element={
           <RotaProtegida perfilRequerido="medico">
             <AgendaMedica />
           </RotaProtegida>
         } />
 
-        {/* Outras rotas do sistema */}
         <Route path="/my-appointments" element={<MyAppointments />} />
         <Route path="/medical-record" element={<MedicalRecord />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Rota de Captura para evitar telas brancas (404 dentro do React) */}
+        <Route path="/%" element={<Navigate to="/" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+    </>
+  );
+}
+
+// O export padrão apenas envelopa tudo com o BrowserRouter externo
+export default function App() {
+  return (
+    <BrowserRouter>
+      <ConteudoApp />
     </BrowserRouter>
   );
 }
