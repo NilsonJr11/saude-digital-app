@@ -11,31 +11,58 @@ export default function Login() {
     e.preventDefault();
     setErro('');
 
-    try {
-      const response = await fetch('http://localhost/saude-digital-api/login.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      });
-      const dados = await response.json();
-
-      if (dados.success) {
-        // Guarda a sessão no localStorage
-        localStorage.setItem('usuario_logado', JSON.stringify(dados.user));
-        
-        // REDIRECIONAMENTO CORRETO USANDO O NAVIGATE DO REAСТ
-        if (dados.user.perfil === 'secretaria') {
-          navigate('/dashboard-secretaria');
-        } else if (dados.user.perfil === 'medico') {
-          navigate('/agenda-medica');
-        } else {
-          navigate('/');
-        }
-      } else {
-        setErro(dados.error);
+    // 🎯 BANCO DE DADOS LOCAL SIMULADO (MOCK)
+    // Permite que seu sistema funcione 100% na Vercel de forma independente
+    const usuariosSimulados = {
+      'secretaria@saude.com': {
+        nome: 'Renata Souza',
+        perfil: 'secretaria',
+        email: 'secretaria@saude.com'
+      },
+      'ana.silva@saude.com': {
+        nome: 'Dra. Ana Silva',
+        perfil: 'medico',
+        email: 'ana.silva@saude.com'
+      },
+      'marcos.souza@saude.com': {
+        nome: 'Dr. Marcos Souza',
+        perfil: 'medico',
+        email: 'marcos.souza@saude.com'
+      },
+      'julia.lins@saude.com': {
+        nome: 'Dra. Julia Lins',
+        perfil: 'medico',
+        email: 'julia.lins@saude.com'
+      },
+      'ricardo.vaz@saude.com': {
+        nome: 'Dr. Ricardo Vaz',
+        perfil: 'medico',
+        email: 'ricardo.vaz@saude.com'
       }
-    } catch (error) {
-      setErro('Falha ao conectar com o servidor da clínica.');
+    };
+
+    const emailLimpo = email.trim().toLowerCase();
+
+    // Verifica se o e-mail digitado existe no nosso Mock
+    if (usuariosSimulados[emailLimpo]) {
+      const usuario = usuariosSimulados[emailLimpo];
+      
+      // Guarda a sessão exatamente como o PHP faria
+      localStorage.setItem('usuario_logado', JSON.stringify(usuario));
+      
+      // Força uma atualização rápida no estado global (caso necessário) ou redireciona
+      if (usuario.perfil === 'secretaria') {
+        navigate('/dashboard-secretaria');
+      } else if (usuario.perfil === 'medico') {
+        navigate('/agenda-medica');
+      } else {
+        navigate('/');
+      }
+      
+      // Recarrega a página bem rápido apenas para o cabeçalho ler o localStorage atualizado
+      window.location.reload();
+    } else {
+      setErro('E-mail corporativo não cadastrado no sistema da clínica.');
     }
   };
 
