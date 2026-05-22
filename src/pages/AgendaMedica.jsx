@@ -1,4 +1,4 @@
-//import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Clock, CheckCircle2, User, RefreshCw } from 'lucide-react';
 
 export default function AgendaMedica() {
