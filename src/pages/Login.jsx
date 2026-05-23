@@ -125,6 +125,20 @@ export default function Login() {
                 marcos.souza@saude.com
               </code>
             </div>
+
+            <div className="flex justify-between items-center text-[11px]">
+              <span className="font-bold text-slate-500">Dra. Julia (Clínica):</span>
+              <code onClick={() => setEmail('julia.lins@saude.com')} className="bg-white px-2 py-0.5 rounded border border-gray-200 text-purple-600 font-mono font-bold cursor-pointer hover:bg-purple-50 transition-colors">
+                julia.lins@saude.com
+              </code>
+            </div>
+
+            <div className="flex justify-between items-center text-[11px]">
+              <span className="font-bold text-slate-500">Dr. Ricardo (Orto):</span>
+              <code onClick={() => setEmail('ricardo.vaz@saude.com')} className="bg-white px-2 py-0.5 rounded border border-gray-200 text-purple-600 font-mono font-bold cursor-pointer hover:bg-purple-50 transition-colors">
+                ricardo.vaz@saude.com
+              </code>
+            </div>
           </div>
         </div>
       </div>

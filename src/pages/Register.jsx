@@ -9,85 +9,149 @@ export default function Register() {
   const [cpf, setCpf] = useState('');
   const [telefone, setTelefone] = useState('');
   const [nascimento, setNascimento] = useState('');
+  const [erro, setErro] = useState('');
   
   const navigate = useNavigate();
 
+  // 🛡️ Máscara de CPF em tempo real (000.000.000-00)
+  const handleCpfChange = (e) => {
+    let value = e.target.value.replace(/\D/g, ""); // Remove tudo que não é número
+    if (value.length > 11) value = value.slice(0, 11); // Limita a 11 dígitos
+    
+    // Aplica a formatação do CPF
+    value = value.replace(/(\d{3})(\d)/, "$1.$2");
+    value = value.replace(/(\d{3})(\d)/, "$1.$2");
+    value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+    
+    setCpf(value);
+  };
+
+  // 🛡️ Máscara de Telefone em tempo real ((XX) XXXXX-XXXX)
+  const handleTelefoneChange = (e) => {
+    let value = e.target.value.replace(/\D/g, "");
+    if (value.length > 11) value = value.slice(0, 11);
+    
+    value = value.replace(/^(\d{2})(\d)/g, "($1) $2");
+    value = value.replace(/(\d{5})(\d)/, "$1-$2");
+    
+    setTelefone(value);
+  };
+
   const handleRegister = (e) => {
     e.preventDefault();
-    
-    // 1. Mudamos para 'usuarios_pacientes' para alinhar com a tela de login
-    const usuarios = JSON.parse(localStorage.getItem('usuarios_pacientes') || '[]');
+    setErro('');
+
     const emailLimpo = email.trim().toLowerCase();
-    
-    if (usuarios.find(u => u.email === emailLimpo)) {
-      alert("Este email já está cadastrado!");
+    const cpfLimpo = cpf.replace(/\D/g, "");
+    const telefoneLimpo = telefone.replace(/\D/g, "");
+
+    // ── VALIDAÇÕES DE SEGURANÇA ──
+    if (nome.trim().length < 3) {
+      setErro("Por favor, insira o seu nome completo.");
       return;
     }
 
-    // 2. O "pacotão" agora inclui o perfil: 'paciente' automaticamente!
+    if (cpfLimpo.length !== 11) {
+      setErro("O CPF digitado está incompleto. Deve conter 11 números.");
+      return;
+    }
+
+    if (telefoneLimpo.length < 10 || telefoneLimpo.length > 11) {
+      setErro("O telefone digitado é inválido. Inclua o DDD.");
+      return;
+    }
+
+    if (!emailLimpo.includes('@') || emailLimpo.length < 5) {
+      setErro("Por favor, digite um endereço de e-mail válido.");
+      return;
+    }
+
+    if (senha.length < 6) {
+      setErro("Senha muito fraca! Crie uma senha com pelo menos 6 caracteres.");
+      return;
+    }
+
+    // Gravação unificada na chave 'usuarios' usada pelo seu Login
+    const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+    
+    if (usuarios.find(u => u.email === emailLimpo)) {
+      setErro("Este endereço de e-mail já está cadastrado no sistema!");
+      return;
+    }
+
     const novoUsuario = { 
-      nome, 
+      nome: nome.trim(), 
       email: emailLimpo, 
-      senha, 
+      senha, // Em um sistema real seria encriptada, aqui salvamos para o mock bater
       cpf, 
       telefone, 
       nascimento,
       genero,
-      perfil: 'paciente', // 👈 Crucial para o roteamento do App.jsx funcionar
+      perfil: 'paciente',
       dataCriacao: new Date().toLocaleDateString('pt-BR') 
     };
 
     usuarios.push(novoUsuario);
-    localStorage.setItem('usuarios_pacientes', JSON.stringify(usuarios));
+    localStorage.setItem('usuarios', JSON.stringify(usuarios));
     
-    alert("Conta completa criada com sucesso! Agora faça seu login.");
+    alert("Conta criada com total segurança! Redirecionando para o login...");
     navigate('/login');
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-slate-950">
       <div className="bg-white w-full max-w-2xl rounded-[40px] shadow-2xl overflow-hidden border border-gray-100">
         
-        {/* Banner Superior com cores do seu tema */}
-        <div className="bg-slate-900 p-10 text-center">
+        {/* Banner Superior IDÊNTICO ao seu layout */}
+        <div className="bg-[#111827] p-10 text-center border-b border-gray-800">
           <h2 className="text-white text-3xl font-black italic tracking-tighter uppercase">
-            Saúde<span className="text-indigo-400">Digital</span> Pro
+            Saúde<span className="text-indigo-500">Digital</span> Pro
           </h2>
-          <p className="text-white/70 text-sm mt-2">Complete seu cadastro único para agendar consultas e exames</p>
+          <p className="text-white/70 text-xs mt-2 font-medium tracking-wide">
+            Complete seu cadastro único para agendar consultas e exames
+          </p>
         </div>
 
-        <form onSubmit={handleRegister} className="p-10">
+        <form onSubmit={handleRegister} className="p-10 space-y-6">
+          
+          {/* Mensagem de Erro Segura */}
+          {erro && (
+            <div className="p-4 bg-red-50 border border-red-200 text-red-600 rounded-2xl text-sm font-bold text-center">
+              ⚠️ {erro}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Nome Completo */}
             <div className="md:col-span-2">
-              <label className="block text-slate-700 font-bold mb-2 text-sm">Nome Completo</label>
+              <label className="block text-slate-700 font-bold mb-1.5 text-xs uppercase tracking-wider">Nome Completo</label>
               <input 
                 type="text" required
-                className="w-full px-5 py-4 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                className="w-full px-5 py-4 rounded-2xl bg-gray-50 border border-gray-200 outline-none focus:border-indigo-500 focus:bg-white transition-all font-medium text-slate-800"
                 placeholder="Ex: Nilson Junior"
                 value={nome}
                 onChange={(e) => setNome(e.target.value)}
               />
             </div>
 
-            {/* CPF */}
+            {/* CPF formatado */}
             <div>
-              <label className="block text-slate-700 font-bold mb-2 text-sm">CPF</label>
+              <label className="block text-slate-700 font-bold mb-1.5 text-xs uppercase tracking-wider">CPF</label>
               <input 
                 type="text" required
-                className="w-full px-5 py-4 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                className="w-full px-5 py-4 rounded-2xl bg-gray-50 border border-gray-200 outline-none focus:border-indigo-500 focus:bg-white transition-all font-medium text-slate-800"
                 placeholder="000.000.000-00"
                 value={cpf}
-                onChange={(e) => setCpf(e.target.value)}
+                onChange={handleCpfChange}
               />
             </div>
 
             {/* Data de Nascimento */}
             <div>
-              <label className="block text-slate-700 font-bold mb-2 text-sm">Data de Nascimento</label>
+              <label className="block text-slate-700 font-bold mb-1.5 text-xs uppercase tracking-wider">Data de Nascimento</label>
               <input 
                 type="date" required
-                className="w-full px-5 py-4 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-500"
+                className="w-full px-5 py-4 rounded-2xl bg-gray-50 border border-gray-200 outline-none focus:border-indigo-500 focus:bg-white transition-all font-medium text-slate-600"
                 value={nascimento}
                 onChange={(e) => setNascimento(e.target.value)}
               />
@@ -95,10 +159,10 @@ export default function Register() {
 
             {/* Gênero */}
             <div>
-              <label className="block text-slate-700 font-bold mb-2 text-sm">Gênero</label>
+              <label className="block text-slate-700 font-bold mb-1.5 text-xs uppercase tracking-wider">Gênero</label>
               <select 
                 required
-                className="w-full px-5 py-4 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-500"
+                className="w-full px-5 py-4 rounded-2xl bg-gray-50 border border-gray-200 outline-none focus:border-indigo-500 focus:bg-white transition-all font-medium text-slate-600"
                 value={genero}
                 onChange={(e) => setGenero(e.target.value)}
               >
@@ -109,37 +173,37 @@ export default function Register() {
               </select>
             </div>
 
-            {/* Telefone */}
+            {/* Telefone Formatado */}
             <div>
-              <label className="block text-slate-700 font-bold mb-2 text-sm">Telefone/WhatsApp</label>
+              <label className="block text-slate-700 font-bold mb-1.5 text-xs uppercase tracking-wider">Telefone/WhatsApp</label>
               <input 
                 type="tel" required
-                className="w-full px-5 py-4 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                className="w-full px-5 py-4 rounded-2xl bg-gray-50 border border-gray-200 outline-none focus:border-indigo-500 focus:bg-white transition-all font-medium text-slate-800"
                 placeholder="(11) 99999-9999"
                 value={telefone}
-                onChange={(e) => setTelefone(e.target.value)}
+                onChange={handleTelefoneChange}
               />
             </div>
 
             {/* E-mail */}
             <div>
-              <label className="block text-slate-700 font-bold mb-2 text-sm">E-mail</label>
+              <label className="block text-slate-700 font-bold mb-1.5 text-xs uppercase tracking-wider">E-mail</label>
               <input 
                 type="email" required
-                className="w-full px-5 py-4 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                className="w-full px-5 py-4 rounded-2xl bg-gray-50 border border-gray-200 outline-none focus:border-indigo-500 focus:bg-white transition-all font-medium text-slate-800"
                 placeholder="exemplo@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
 
-            {/* Senha */}
+            {/* Senha Protegida */}
             <div>
-              <label className="block text-slate-700 font-bold mb-2 text-sm">Crie uma Senha</label>
+              <label className="block text-slate-700 font-bold mb-1.5 text-xs uppercase tracking-wider">Crie uma Senha</label>
               <input 
                 type="password" required
-                className="w-full px-5 py-4 rounded-2xl bg-gray-50 border border-gray-100 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-                placeholder="No mínimo 6 caracteres"
+                className="w-full px-5 py-4 rounded-2xl bg-gray-50 border border-gray-200 outline-none focus:border-indigo-500 focus:bg-white transition-all font-medium text-slate-800"
+                placeholder="Mínimo 6 caracteres"
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
               />
@@ -148,12 +212,12 @@ export default function Register() {
 
           <button 
             type="submit"
-            className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg shadow-lg hover:bg-slate-800 transition-all active:scale-95 mt-8"
+            className="w-full bg-[#111827] text-white py-5 rounded-2xl font-black text-lg shadow-xl hover:bg-slate-800 transition-all active:scale-[0.98] mt-4 uppercase tracking-tight"
           >
             FINALIZAR MEU CADASTRO
           </button>
 
-          <p className="text-center text-gray-500 text-sm mt-6">
+          <p className="text-center text-gray-500 text-sm mt-4">
             Já tem uma conta? {' '}
             <Link to="/login" className="text-indigo-600 font-bold hover:underline">
               Fazer Login
