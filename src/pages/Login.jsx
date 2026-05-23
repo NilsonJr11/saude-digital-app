@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { ShieldAlert } from 'lucide-react';
 
 export default function Login() {
@@ -13,7 +13,7 @@ export default function Login() {
 
     const emailLimpo = email.trim().toLowerCase();
 
-    // 1. Seus funcionários fixos (Mantidos)
+    // 1. Corpo clínico fixo (MOCK)
     const usuariosSimulados = {
       'secretaria@saude.com': { nome: 'Renata Souza', perfil: 'secretaria', email: 'secretaria@saude.com' },
       'ana.silva@saude.com': { nome: 'Dra. Ana Silva', perfil: 'medico', email: 'ana.silva@saude.com' },
@@ -22,34 +22,38 @@ export default function Login() {
       'ricardo.vaz@saude.com': { nome: 'Dr. Ricardo Vaz', perfil: 'medico', email: 'ricardo.vaz@saude.com' }
     };
 
-    // 2. Busca a lista de Pacientes criados dinamicamente no localStorage
-    const pacientesCadastrados = JSON.parse(localStorage.getItem('usuarios_pacientes')) || [];
-    const pacienteEncontrado = pacientesCadastrados.find(p => p.email === emailLimpo);
+    // 2. BUSCA NA MESMA CHAVE DO SEU REGISTRO ('usuarios')
+    const pacientesCadastrados = JSON.parse(localStorage.getItem('usuarios') || '[]');
+    const pacienteEncontrado = pacientesCadastrados.find(p => p.email.trim().toLowerCase() === emailLimpo);
 
     let usuarioLogado = null;
 
     if (usuariosSimulados[emailLimpo]) {
       usuarioLogado = usuariosSimulados[emailLimpo];
     } else if (pacienteEncontrado) {
-      usuarioLogado = pacienteEncontrado;
+      // Força o perfil para paciente caso ele tenha vindo do cadastro dinâmico
+      usuarioLogado = {
+        ...pacienteEncontrado,
+        perfil: pacienteEncontrado.perfil || 'paciente'
+      };
     }
 
-    // 3. Se achou o usuário (Seja fixo ou paciente cadastrado na hora)
+    // 3. Redirecionamento correto por Perfil
     if (usuarioLogado) {
       localStorage.setItem('usuario_logado', JSON.stringify(usuarioLogado));
       
-      // Redirecionamento baseado no perfil
       if (usuarioLogado.perfil === 'secretaria') {
         navigate('/dashboard-secretaria');
       } else if (usuarioLogado.perfil === 'medico') {
         navigate('/agenda-medica');
-      } else if (usuarioLogado.perfil === 'paciente') {
-        navigate('/my-appointments'); // 👈 Leva o cliente para a tela de consultas dele!
+      } else {
+        // Redireciona o cliente/paciente para a rota dele
+        navigate('/my-appointments');
       }
       
       window.location.reload();
     } else {
-      setErro('E-mail não cadastrado. Se você é paciente, crie sua conta abaixo!');
+      setErro('E-mail corporativo ou de paciente não encontrado.');
     }
   };
 
@@ -70,7 +74,7 @@ export default function Login() {
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
-            <label className="text-[10px] font-black text-gray-400 uppercase ml-2">E-mail Corporativo</label>
+            <label className="text-[10px] font-black text-gray-400 uppercase ml-2">E-mail de Acesso</label>
             <input 
               type="email" 
               required
@@ -86,67 +90,39 @@ export default function Login() {
           </button>
         </form>
 
+        {/* LINK PARA A TELA DE CADASTRO QUE VOCÊ CRIOU */}
+        <p className="text-center text-gray-500 text-xs mt-4">
+          É um paciente novo? {' '}
+          <Link to="/register" className="text-indigo-600 font-bold hover:underline">
+            Criar minha conta agora
+          </Link>
+        </p>
+
         {/* SEÇÃO DE ACESSOS RÁPIDOS INTERATIVOS */}
-        <div className="mt-8 text-center border-t border-gray-100 pt-6">
+        <div className="mt-6 text-center border-t border-gray-100 pt-6">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">
             Acessos Rápidos de Teste (Clique para preencher):
           </p>
           
           <div className="flex flex-col gap-2 max-w-xs mx-auto text-left bg-slate-50 p-3 rounded-2xl border border-gray-100">
-            {/* Perfil Secretaria */}
             <div className="flex justify-between items-center text-[11px]">
               <span className="font-bold text-slate-500">Secretaria:</span>
-              <code 
-                onClick={() => setEmail('secretaria@saude.com')}
-                className="bg-white px-2 py-0.5 rounded border border-gray-200 text-indigo-600 font-mono font-bold cursor-pointer hover:bg-indigo-50 hover:border-indigo-200 transition-colors"
-                title="Clique para preencher"
-              >
+              <code onClick={() => setEmail('secretaria@saude.com')} className="bg-white px-2 py-0.5 rounded border border-gray-200 text-indigo-600 font-mono font-bold cursor-pointer hover:bg-indigo-50 transition-colors">
                 secretaria@saude.com
               </code>
             </div>
 
-            {/* Médicos Fixos Cadastrados no Sistema */}
             <div className="flex justify-between items-center text-[11px]">
               <span className="font-bold text-slate-500">Dra. Ana (Cardio):</span>
-              <code 
-                onClick={() => setEmail('ana.silva@saude.com')}
-                className="bg-white px-2 py-0.5 rounded border border-gray-200 text-purple-600 font-mono font-bold cursor-pointer hover:bg-purple-50 hover:border-purple-200 transition-colors"
-                title="Clique para preencher"
-              >
+              <code onClick={() => setEmail('ana.silva@saude.com')} className="bg-white px-2 py-0.5 rounded border border-gray-200 text-purple-600 font-mono font-bold cursor-pointer hover:bg-purple-50 transition-colors">
                 ana.silva@saude.com
               </code>
             </div>
 
             <div className="flex justify-between items-center text-[11px]">
               <span className="font-bold text-slate-500">Dr. Marcos (Pediatra):</span>
-              <code 
-                onClick={() => setEmail('marcos.souza@saude.com')}
-                className="bg-white px-2 py-0.5 rounded border border-gray-200 text-purple-600 font-mono font-bold cursor-pointer hover:bg-purple-50 hover:border-purple-200 transition-colors"
-                title="Clique para preencher"
-              >
+              <code onClick={() => setEmail('marcos.souza@saude.com')} className="bg-white px-2 py-0.5 rounded border border-gray-200 text-purple-600 font-mono font-bold cursor-pointer hover:bg-purple-50 transition-colors">
                 marcos.souza@saude.com
-              </code>
-            </div>
-
-            <div className="flex justify-between items-center text-[11px]">
-              <span className="font-bold text-slate-500">Dra. Julia (Clínica):</span>
-              <code 
-                onClick={() => setEmail('julia.lins@saude.com')}
-                className="bg-white px-2 py-0.5 rounded border border-gray-200 text-purple-600 font-mono font-bold cursor-pointer hover:bg-purple-50 hover:border-purple-200 transition-colors"
-                title="Clique para preencher"
-              >
-                julia.lins@saude.com
-              </code>
-            </div>
-
-            <div className="flex justify-between items-center text-[11px]">
-              <span className="font-bold text-slate-500">Dr. Ricardo (Orto):</span>
-              <code 
-                onClick={() => setEmail('ricardo.vaz@saude.com')}
-                className="bg-white px-2 py-0.5 rounded border border-gray-200 text-purple-600 font-mono font-bold cursor-pointer hover:bg-purple-50 hover:border-purple-200 transition-colors"
-                title="Clique para preencher"
-              >
-                ricardo.vaz@saude.com
               </code>
             </div>
           </div>
