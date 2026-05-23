@@ -11,58 +11,45 @@ export default function Login() {
     e.preventDefault();
     setErro('');
 
-    // 🎯 BANCO DE DADOS LOCAL SIMULADO (MOCK)
-    // Permite que seu sistema funcione 100% na Vercel de forma independente
-    const usuariosSimulados = {
-      'secretaria@saude.com': {
-        nome: 'Renata Souza',
-        perfil: 'secretaria',
-        email: 'secretaria@saude.com'
-      },
-      'ana.silva@saude.com': {
-        nome: 'Dra. Ana Silva',
-        perfil: 'medico',
-        email: 'ana.silva@saude.com'
-      },
-      'marcos.souza@saude.com': {
-        nome: 'Dr. Marcos Souza',
-        perfil: 'medico',
-        email: 'marcos.souza@saude.com'
-      },
-      'julia.lins@saude.com': {
-        nome: 'Dra. Julia Lins',
-        perfil: 'medico',
-        email: 'julia.lins@saude.com'
-      },
-      'ricardo.vaz@saude.com': {
-        nome: 'Dr. Ricardo Vaz',
-        perfil: 'medico',
-        email: 'ricardo.vaz@saude.com'
-      }
-    };
-
     const emailLimpo = email.trim().toLowerCase();
 
-    // Verifica se o e-mail digitado existe no nosso Mock
+    // 1. Seus funcionários fixos (Mantidos)
+    const usuariosSimulados = {
+      'secretaria@saude.com': { nome: 'Renata Souza', perfil: 'secretaria', email: 'secretaria@saude.com' },
+      'ana.silva@saude.com': { nome: 'Dra. Ana Silva', perfil: 'medico', email: 'ana.silva@saude.com' },
+      'marcos.souza@saude.com': { nome: 'Dr. Marcos Souza', perfil: 'medico', email: 'marcos.souza@saude.com' },
+      'julia.lins@saude.com': { nome: 'Dra. Julia Lins', perfil: 'medico', email: 'julia.lins@saude.com' },
+      'ricardo.vaz@saude.com': { nome: 'Dr. Ricardo Vaz', perfil: 'medico', email: 'ricardo.vaz@saude.com' }
+    };
+
+    // 2. Busca a lista de Pacientes criados dinamicamente no localStorage
+    const pacientesCadastrados = JSON.parse(localStorage.getItem('usuarios_pacientes')) || [];
+    const pacienteEncontrado = pacientesCadastrados.find(p => p.email === emailLimpo);
+
+    let usuarioLogado = null;
+
     if (usuariosSimulados[emailLimpo]) {
-      const usuario = usuariosSimulados[emailLimpo];
+      usuarioLogado = usuariosSimulados[emailLimpo];
+    } else if (pacienteEncontrado) {
+      usuarioLogado = pacienteEncontrado;
+    }
+
+    // 3. Se achou o usuário (Seja fixo ou paciente cadastrado na hora)
+    if (usuarioLogado) {
+      localStorage.setItem('usuario_logado', JSON.stringify(usuarioLogado));
       
-      // Guarda a sessão exatamente como o PHP faria
-      localStorage.setItem('usuario_logado', JSON.stringify(usuario));
-      
-      // Força uma atualização rápida no estado global (caso necessário) ou redireciona
-      if (usuario.perfil === 'secretaria') {
+      // Redirecionamento baseado no perfil
+      if (usuarioLogado.perfil === 'secretaria') {
         navigate('/dashboard-secretaria');
-      } else if (usuario.perfil === 'medico') {
+      } else if (usuarioLogado.perfil === 'medico') {
         navigate('/agenda-medica');
-      } else {
-        navigate('/');
+      } else if (usuarioLogado.perfil === 'paciente') {
+        navigate('/my-appointments'); // 👈 Leva o cliente para a tela de consultas dele!
       }
       
-      // Recarrega a página bem rápido apenas para o cabeçalho ler o localStorage atualizado
       window.location.reload();
     } else {
-      setErro('E-mail corporativo não cadastrado no sistema da clínica.');
+      setErro('E-mail não cadastrado. Se você é paciente, crie sua conta abaixo!');
     }
   };
 

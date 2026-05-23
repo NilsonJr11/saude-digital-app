@@ -95,7 +95,12 @@ function ConteudoApp() {
           </RotaProtegida>
         } />
 
-        <Route path="/my-appointments" element={<MyAppointments />} />
+        <Route path="/my-appointments" element={
+          <RotaProtegida perfilRequerido="paciente">
+            <MyAppointments />
+          </RotaProtegida>
+        } />
+        
         <Route path="/medical-record" element={<MedicalRecord />} />
         <Route path="/register" element={<Register />} />
 
