@@ -15,7 +15,7 @@ export default function Login() {
 
     // 1. Corpo clínico fixo (MOCK)
     const usuariosSimulados = {
-      'secretaria@saude.com': { nome: 'Renata Souza', perfil: 'secretaria', email: 'secretaria@saude.com' },
+      'secretaria@saude.com': { nome: 'ADM', perfil: 'secretaria', email: 'secretaria@saude.com' },
       'ana.silva@saude.com': { nome: 'Dra. Ana Silva', perfil: 'medico', email: 'ana.silva@saude.com' },
       'marcos.souza@saude.com': { nome: 'Dr. Marcos Souza', perfil: 'medico', email: 'marcos.souza@saude.com' },
       'julia.lins@saude.com': { nome: 'Dra. Julia Lins', perfil: 'medico', email: 'julia.lins@saude.com' },
@@ -41,6 +41,7 @@ export default function Login() {
     // 3. Redirecionamento correto por Perfil
     if (usuarioLogado) {
       localStorage.setItem('usuario_logado', JSON.stringify(usuarioLogado));
+      window.dispatchEvent(new Event('login_efetuado'));
       
       if (usuarioLogado.perfil === 'secretaria') {
         navigate('/dashboard-secretaria');
