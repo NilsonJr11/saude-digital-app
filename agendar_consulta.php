@@ -1,13 +1,15 @@
 <?php
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Headers: Content-Type");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Content-Type: application/json; charset=UTF-8");
+header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 
-// Trata requisições OPTIONS (Preflight do CORS)
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit(0);
 }
+
+include 'conexao.php';
+
+$data = json_decode(file_get_contents("php://input"), true);
 
 $host = "localhost";
 $db   = "saude_digital";
