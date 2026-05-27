@@ -1,32 +1,59 @@
 <?php
 header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Content-Type: application/json; charset=UTF-8");
 
-$host = "localhost";
-$db   = "saude_digital";
-$user = "saude_admin";
-$pass = "digital";
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    exit(0);
+}
+
+// Força o PHP a mostrar qualquer erro oculto
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
 try {
-    $conn = new PDO("mysql:host=$host;dbname=$db;charset=utf8", $user, $pass);
-    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    if (!file_exists('conexao.php')) {
+        throw new Exception("O arquivo conexao.php nao foi encontrado na pasta da API!");
+    }
+    
+    include 'conexao.php';
+    
+    if (!isset($conexao)) {
+        throw new Exception("A variavel de conexao com o banco nao existe. Verifique o seu conexao.php");
+    }
 
-    // Buscando ID, Nome, Perfil e Especialidade
-    $stmt = $conn->prepare("SELECT id, nome, perfil, specialty as especialidade FROM usuarios");
+    // Tenta uma consulta simples primeiro
+    $query = "SELECT id, nome, perfil FROM usuarios";
     
-    // NOTA: Se na sua tabela a coluna se chamar 'especialidade', mude para:
-    $stmt = $conn->prepare("SELECT id, nome, perfil, COLUMN_JSON(especialidade) as especialidade FROM usuarios");
-    // Ou simplesmente:
-    $stmt = $conn->prepare("SELECT id, nome, perfil, name as nome, especialidade FROM usuarios");
-    
-    // Vamos usar a query padrão garantida:
-    $stmt = $conn->prepare("SELECT id, nome, perfil, especialidade FROM usuarios");
-    
-    $stmt->execute();
-    $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    // Verifica se a coluna especialidade existe de verdade antes de pedir ela
+    $testeColuna = $conexao->query("SHOW COLUMNS FROM usuarios LIKE 'especialidade'");
+    if ($testeColuna && $testeColuna->num_rows > 0) {
+        $query = "SELECT id, nome, perfil, especialidade FROM usuarios";
+    }
 
-    echo json_encode($usuarios);
-} catch (PDOException $e) {
-    echo json_encode(["error" => $e->getMessage()]);
+    $resultado = $conexao->query($query);
+    
+    if (!$resultado) {
+        throw new Exception("Erro na consulta ao banco: " . $conexao->error);
+    }
+
+    $usuarios = [];
+    while ($linha = $resultado->fetch_assoc()) {
+        $usuarios[] = $linha;
+    }
+
+    echo json_encode($usuarios, JSON_UNESCAPED_UNICODE);
+
+} catch (Throwable $e) {
+    // Captura Erros Fatais do PHP que antes faziam a tela ficar branca
+    http_response_code(500);
+    echo json_encode([
+        "error" => true,
+        "mensagem" => $e->getMessage(),
+        "arquivo" => $e->getFile(),
+        "linha" => $e->getLine()
+    ], JSON_UNESCAPED_UNICODE);
 }
 ?>

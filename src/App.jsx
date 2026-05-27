@@ -7,6 +7,11 @@ import MedicalRecord from './pages/MedicalRecord';
 import MyAppointments from './pages/MyAppointments';
 import Register from './pages/Register';
 import Home from './pages/Home';
+import { Link } from 'react-router-dom';
+import ExamesDetalhes from './pages/ExamesDetalhes';
+import ExamsList from './pages/ExamsList';
+import NotFound from './pages/NotFound';
+
 
 // Componente de proteção de rotas restritas
 function RotaProtegida({ children, perfilRequerido }) {
@@ -65,12 +70,10 @@ function ConteudoApp() {
         <header className="bg-slate-900 text-white px-8 py-4 flex justify-between items-center font-sans shadow-md">
           <div className="flex items-center gap-3">
             <div className="flex flex-col">
-              <span className="font-black text-lg italic tracking-tighter text-white uppercase">
+              <Link to="/" className="flex items-center gap-2"><span className="font-black text-lg italic tracking-tighter text-white uppercase">
                 Saúde<span className="text-indigo-400">Digital</span> Pro
               </span>
-              <span className="text-[9px] font-bold text-slate-400 tracking-widest uppercase -mt-1">
-                Sistema Médico Integrado
-              </span>
+              </Link>
             </div>
             <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-full font-bold uppercase ml-2">
               {user.perfil}
@@ -132,10 +135,19 @@ function ConteudoApp() {
         {/* 🩺 CONEXÃO DE SEGURANÇA: Evita quebrar ao clicar nas ações da Home */}
         <Route path="/medico/:id" element={user ? <Navigate to="/my-appointments" replace /> : <Navigate to="/login" replace />} />
         <Route path="/exames" element={user ? <Navigate to="/my-appointments" replace /> : <Navigate to="/login" replace />} />
+        <Route path="/exames/:id" element={user ? <Navigate to="/my-appointments" replace /> : <Navigate to="/login" replace />} />
 
         {/* Redirecionamentos para links corrompidos */}
         <Route path="/%" element={<Navigate to="/" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
+
+        {/* Rota 404 */}
+        <Route path="*" element={<NotFound />} />
+
+        {/* Exames */}
+        <Route path="/exames" element={<ExamsList />} />
+        <Route path="/exames/:id" element={<ExamesDetalhes />} />
+
       </Routes>
     </>
   );
