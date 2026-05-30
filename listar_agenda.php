@@ -1,15 +1,30 @@
 <?php
-header("Access-Control-Allow-Origin: *");
-header("Content-Type: application/json; charset=UTF-8");
+// Inclui a conexão central, o CORS e o charset corretos
+require_once 'conexao.php'; 
 
-$conn = new PDO("mysql:host=localhost;dbname=saude_digital;charset=utf8", "saude_admin", "digital");
-
-// Faz um JOIN para trazer o nome do paciente junto com a consulta
+// Consulta SQL com o JOIN do paciente
 $sql = "SELECT a.*, u.nome as paciente_nome 
         FROM agenda a 
         JOIN usuarios u ON a.paciente_id = u.id 
         ORDER BY a.data_hora ASC";
 
-$stmt = $conn->prepare($sql);
-$stmt->execute();
-echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+$resultado = $conexao->query($sql);
+
+if ($resultado) {
+    $agenda = [];
+    while ($linha = $resultado->fetch_assoc()) {
+        $agenda[] = $linha;
+    }
+    
+    // Devolve os dados em JSON para o React
+    header('Content-Type: application/json');
+    echo json_encode($agenda);
+} else {
+    // Se a tabela 'agenda' não existir ou o SQL falhar, avisa o React com elegância
+    header('Content-Type: application/json', true, 500);
+    echo json_encode([
+        "error" => true,
+        "mensagem" => "Erro ao listar agenda: " . $conexao->error
+    ]);
+}
+?>

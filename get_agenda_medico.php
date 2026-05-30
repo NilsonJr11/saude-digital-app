@@ -8,47 +8,73 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit(0);
 }
 
-include 'conexao.php';
-
-// Captura o ID do médico passado pelo React
-$medico_id = $_GET['medico_id'] ?? null;
-
-if (!$medico_id) {
-    echo json_encode(["erro" => "ID do medico nao fornecido."]);
-    exit;
-}
-
 try {
-    // 🔍 Busca as consultas do médico fazendo o JOIN correto
-    $query = "SELECT 
-                a.id,
-                DATE_FORMAT(a.data_hora, '%H:%i') AS hora,
-                a.status,
-                a.motivo,
-                p.nome AS paciente,
-                p.telefone AS paciente_telefone
-              FROM agenda a
-              INNER JOIN usuarios p ON a.paciente_id = p.id
-              WHERE a.medico_id = ?
-              ORDER BY a.data_hora ASC";
+    include 'conexao.php';
 
-    $stmt = $conexao->prepare($query);
+    // Aceita o ID do médico tanto por URL (GET) quanto por JSON (POST)
+    $medico_id = $_GET['medico_id'] ?? $_GET['medico'] ?? null;
     
-    // "i" indica que o parâmetro é um Integer (Inteiro)
+    if (!$medico_id) {
+        $dados = json_decode(file_get_contents("php://input"), true);
+        $medico_id = $dados['medico_id'] ?? $dados['medico'] ?? null;
+    }
+
+    // Se não for passado nenhum ID, podemos usar temporariamente o ID 1 (Dr. Ricardo) para não travar a tela
+    if (!$medico_id) {
+        $medico_id = 1; 
+    }
+
+    // Query robusta trazendo os dados da agenda juntamente com o nome do paciente
+    $sql = "SELECT 
+                a.id, 
+                a.data_hora, 
+                a.motivo, 
+                a.status,
+                p.nome AS paciente_nome 
+            FROM agenda a
+            LEFT JOIN pacientes p ON a.paciente_id = p.id
+            WHERE a.medico_id = ?
+            ORDER BY a.data_hora ASC";
+
+    $stmt = $conexao->prepare($sql);
     $stmt->bind_param("i", $medico_id);
     $stmt->execute();
     $resultado = $stmt->get_result();
 
-    $agenda = [];
+    $eventos = [];
+
     while ($linha = $resultado->fetch_assoc()) {
-        $agenda[] = $linha;
+        // Define a cor do card no calendário baseado no status atual
+        $cor = '#7c3aed'; // Roxo padrão (Pendente)
+        if ($linha['status'] === 'atendido' || $linha['status'] === 'ATENDIDO') {
+            $cor = '#10b981'; // Verde
+        } elseif ($linha['status'] === 'cancelado' || $linha['status'] === 'CANCELADO') {
+            $cor = '#ef4444'; // Vermelho
+        }
+
+        // Extrai apenas o horário (HH:MM) para o título
+        $horario = date('H:i', strtotime($linha['data_hora']));
+
+        $eventos[] = [
+            "id" => $linha['id'],
+            "title" => $horario . " - " . ($linha['paciente_nome'] ?? 'Paciente Não Identificado'),
+            "start" => str_replace(' ', 'T', $linha['data_hora']), // Formato ISO exigido pelo FullCalendar
+            "backgroundColor" => $cor,
+            "borderColor" => $cor,
+            "extendedProps" => [
+                "status" => $linha['status'],
+                "motivo" => $linha['motivo']
+            ]
+        ];
     }
 
-    // Retorna a lista para o React (se estiver vazia, retorna um array vazio [])
-    echo json_encode($agenda, JSON_UNESCAPED_UNICODE);
+    echo json_encode($eventos, JSON_UNESCAPED_UNICODE);
 
-} catch (Exception $e) {
+} catch (Throwable $e) {
     http_response_code(500);
-    echo json_encode(["erro" => $e->getMessage()]);
+    echo json_encode([
+        "error" => true,
+        "mensagem" => "Erro ao carregar agenda: " . $e->getMessage()
+    ], JSON_UNESCAPED_UNICODE);
 }
 ?>

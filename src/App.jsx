@@ -132,22 +132,15 @@ function ConteudoApp() {
           </RotaProtegida>
         } />
 
-        {/* 🩺 CONEXÃO DE SEGURANÇA: Evita quebrar ao clicar nas ações da Home */}
+        {/* 🩺 CONEXÃO DE SEGURANÇA: Redireciona médicos se tentarem agendar */}
         <Route path="/medico/:id" element={user ? <Navigate to="/my-appointments" replace /> : <Navigate to="/login" replace />} />
-        <Route path="/exames" element={user ? <Navigate to="/my-appointments" replace /> : <Navigate to="/login" replace />} />
-        <Route path="/exames/:id" element={user ? <Navigate to="/my-appointments" replace /> : <Navigate to="/login" replace />} />
 
-        {/* Redirecionamentos para links corrompidos */}
-        <Route path="/%" element={<Navigate to="/" replace />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-
-        {/* Rota 404 */}
-        <Route path="*" element={<NotFound />} />
-
-        {/* Exames */}
+        {/* 📋 Rotas de Exames */}
         <Route path="/exames" element={<ExamsList />} />
         <Route path="/exames/:id" element={<ExamesDetalhes />} />
 
+        {/* Rota Coringa para links corrompidos ou 404 (Redireciona para a Home) */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
   );
