@@ -1,124 +1,283 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, ShieldAlert } from 'lucide-react';
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import ptBrLocale from '@fullcalendar/core/locales/pt-br';
 
 export default function AgendaMedica() {
-  const [consultas, setConsultas] = useState([]);
-  const [carregando, setCarregando] = useState(true);
-  const [erro, setErro] = useState('');
+  const [eventos, setEventos] = useState([]);
+  const [erro, setErro] = useState(null);
   
-  // Pega as informações do médico logado no sistema
-  const medicoLogado = JSON.parse(localStorage.getItem('usuario_logado'));
+  // Estados para o Modal de Detalhes da Consulta
+  const [modalAberto, setModalAberto] = useState(false);
+  const [eventoSelecionado, setEventoSelecionado] = useState(null);
 
-  const buscarConsultasDoBanco = async () => {
-    if (!medicoLogado || !medicoLogado.id) {
-      setErro("Acesso negado: Perfil de médico não identificado no sistema.");
-      setCarregando(false);
-      return;
-    }
+  // Estados para a Tela de Atendimento / Prontuário
+  const [modoAtendimento, setModoAtendimento] = useState(false);
+  const [prontuario, setProntuario] = useState({
+    queixa: '',
+    exameFisico: '',
+    diagnostico: '',
+    prescricao: ''
+  });
 
+  const medicoLogado = {
+    id: 23,
+    nome: "Dr. Ricardo Vaz"
+  };
+
+  // Carrega os agendamentos da API
+  const carregarAgenda = async () => {
     try {
-      setCarregando(true);
-      // 🌐 Consome a mesma API unificada que a secretaria usa!
-      const response = await fetch('http://localhost/saude-digital-api/listar_consultas.php');
-      const data = await response.json();
+      const response = await fetch(`http://localhost/saude-digital-api/get_agenda_medico.php?medico_id=${medicoLogado.id}`);
+      if (!response.ok) throw new Error("Erro ao buscar dados do servidor");
       
-      if (Array.isArray(data)) {
-        // 🔍 Filtra dinamicamente os agendamentos pertencentes apenas a este Médico ID logado
-        const minhasConsultas = data.filter(item => 
-          Number(item.medico_id) === Number(medicoLogado.id)
-        );
-        setConsultas(minhasConsultas);
+      const dados = await response.json();
+      if (Array.isArray(dados)) {
+        setEventos(dados);
+        setErro(null);
       } else {
-        setErro("Formato de dados inválido retornado pelo servidor.");
+        setErro("Formato de dados inválido recebido da API.");
       }
     } catch (err) {
-      console.error("Erro ao carregar agenda do médico:", err);
-      setErro("Não foi possível sincronizar com o banco de dados MariaDB.");
-    } finally {
-      setCarregando(false);
+      setErro(err.message);
     }
   };
 
   useEffect(() => {
-    buscarConsultasDoBanco();
+    carregarAgenda();
   }, []);
 
-  if (carregando) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex justify-center items-center p-12 font-sans text-slate-500 font-bold">
-        <div className="text-center space-y-2">
-          <div className="animate-spin text-indigo-600 font-black text-2xl">🔄</div>
-          <p className="uppercase tracking-widest text-[10px] font-black">Conectando ao MariaDB...</p>
-        </div>
-      </div>
-    );
-  }
+  // Quando o médico clica em um agendamento no calendário
+  const handleEventClick = (info) => {
+    setEventoSelecionado({
+      id: info.event.id,
+      title: info.event.title,
+      start: info.event.start,
+      status: info.event.extendedProps.status,
+      motivo: info.event.extendedProps.motivo,
+      paciente_nome: info.event.extendedProps.paciente_nome
+    });
+    setModalAberto(true);
+  };
+
+  // Acionado ao clicar no botão "Atender"
+  const iniciarAtendimento = () => {
+    setModalAberto(false); // Fecha o modal de detalhes
+    setProntuario({
+      queixa: eventoSelecionado.motivo || '',
+      exameFisico: '',
+      diagnostico: '',
+      prescricao: ''
+    });
+    setModoAtendimento(true); // Abre a tela de prontuário
+  };
+
+  // Envio do Prontuário preenchido (Próximo passo: Criar essa API)
+  const salvarAtendimento = async (e) => {
+    e.preventDefault();
+    
+    // Por enquanto, mostraremos um alerta simulando o sucesso antes de criarmos o arquivo PHP
+    alert(`Atendimento do paciente ${eventoSelecionado.paciente_nome} salvo com sucesso!`);
+    
+    // Reseta as telas e recarrega a agenda
+    setModoAtendimento(false);
+    setEventoSelecionado(null);
+    carregarAgenda();
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8 font-sans">
-      <div className="max-w-4xl mx-auto">
-        
-        <header className="mb-10">
-          <h1 className="text-4xl font-black text-slate-800 italic tracking-tighter">Minha Agenda</h1>
-          <p className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.3em]">
-            Plantão Médico: {medicoLogado?.nome || 'Médico Clínico'}
-          </p>
-        </header>
-
-        {erro && (
-          <div className="mb-6 p-4 bg-red-50 rounded-2xl flex items-center gap-3 text-red-600 font-bold text-xs border border-red-100">
-            <ShieldAlert size={16} />
-            <span>{erro}</span>
-          </div>
-        )}
-
-        {/* TABELA DE ATENDIMENTO */}
-        <div className="bg-white rounded-[40px] shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-8 border-b border-gray-50 bg-gray-50/50">
-            <h3 className="font-black text-slate-400 text-[10px] uppercase tracking-widest">Fila de Pacientes para Hoje</h3>
-          </div>
-
-          {consultas.length === 0 ? (
-            <div className="p-16 text-center text-gray-400 font-bold italic">
-              🌴 Nenhuma consulta agendada para o seu perfil no banco hoje.
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-50">
-              {consultas.map((item) => {
-                // Separa com segurança o Horário ("HH:MM") contido na string DATETIME do banco
-                const horaExibicao = item.data_hora?.split(' ')[1]?.substring(0, 5) || "00:00";
-                
-                return (
-                  <div key={item.id} className="p-8 flex items-center justify-between hover:bg-gray-50/30 transition-colors">
-                    <div className="flex items-center gap-6">
-                      <span className="font-black text-lg text-indigo-600 bg-indigo-50 px-4 py-2.5 rounded-2xl flex items-center gap-2">
-                        <Clock size={16} /> {horaExibicao}
-                      </span>
-                      <div>
-                        <p className="font-black text-slate-800 text-lg">{item.paciente_nome || `Paciente #${item.paciente_id}`}</p>
-                        <span className={`inline-block mt-1 px-3 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                          item.status === 'Atendido' ? 'bg-emerald-100 text-emerald-600' : 
-                          item.status === 'Cancelado' ? 'bg-rose-100 text-rose-600' : 'bg-amber-100 text-amber-600'
-                        }`}>
-                          {item.status || 'Pendente'}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <button 
-                      onClick={() => alert(`Iniciando Prontuário Eletrônico para: ${item.paciente_nome || 'Paciente'}`)}
-                      className="bg-slate-900 hover:bg-indigo-600 text-white font-black text-xs uppercase tracking-wider px-6 py-3 rounded-2xl transition-all shadow-md"
-                    >
-                      Atender Paciente
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+    <div className="p-6 bg-gray-50 min-h-screen">
+      {/* Cabeçalho */}
+      <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Painel Clínico</h1>
+          <p className="text-sm text-gray-500">Bem-vindo, {medicoLogado.nome}</p>
         </div>
-
+        <div className="flex items-center gap-2 bg-purple-50 text-purple-700 px-3 py-1.5 rounded-lg font-medium text-sm">
+          <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>
+          Médico Logado (ID: {medicoLogado.id})
+        </div>
       </div>
+
+      {erro && (
+        <div className="mb-4 bg-red-50 border-l-4 border-red-500 p-4 text-red-700 rounded shadow-sm">
+          <p className="font-bold">Aviso:</p>
+          <p>{erro}</p>
+        </div>
+      )}
+
+      {/* TELA PRINCIPAL: CALENDÁRIO OU PRONTUÁRIO */}
+      {!modoAtendimento ? (
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <FullCalendar
+            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+            initialView="timeGridWeek"
+            locale={ptBrLocale}
+            headerToolbar={{
+              left: 'prev,next today',
+              center: 'title',
+              right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            }}
+            slotMinTime="07:00:00"
+            slotMaxTime="19:00:00"
+            allDaySlot={false}
+            events={eventos}
+            eventClick={handleEventClick}
+            height="auto"
+          />
+        </div>
+      ) : (
+        /* 🩺 TELA DE ATENDIMENTO / EVOLUÇÃO MÉDICA */
+        <div className="bg-white rounded-xl shadow-md border border-gray-150 overflow-hidden max-w-4xl mx-auto">
+          <div className="bg-gradient-to-r from-purple-700 to-indigo-800 p-6 text-white">
+            <span className="text-xs font-bold uppercase tracking-wider bg-white/20 px-2 py-1 rounded">Atendimento em Andamento</span>
+            <h2 className="text-2xl font-bold mt-2">{eventoSelecionado?.paciente_nome}</h2>
+            <p className="text-sm text-purple-100 mt-1">
+              Consulta agendada para: {new Date(eventoSelecionado?.start).toLocaleDateString('pt-BR')} às {new Date(eventoSelecionado?.start).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}
+            </p>
+          </div>
+
+          <form onSubmit={salvarAtendimento} className="p-6 space-y-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">Anamnese / Queixa Principal</label>
+              <textarea
+                className="w-full border border-gray-300 rounded-lg p-3 shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
+                rows="3"
+                placeholder="Relato do paciente, sintomas e histórico atual..."
+                value={prontuario.queixa}
+                onChange={(e) => setProntuario({...prontuario, queixa: e.target.value})}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">Exame Físico / Sinais Vitais</label>
+              <input
+                type="text"
+                className="w-full border border-gray-300 rounded-lg p-3 shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
+                rows="3"
+                placeholder="PA, FC, Temperatura, Ausculta, observações físicas gerais..."
+                value={prontuario.exameFisico}
+                onChange={(e) => setProntuario({...prontuario, exameFisico: e.target.value})}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Diagnóstico Clínico (ou CID)</label>
+                <input
+                  type="text"
+                  className="w-full border border-gray-300 rounded-lg p-3 shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
+                  placeholder="Ex: Hipotensão, Enxaqueca, CID R51..."
+                  value={prontuario.diagnostico}
+                  onChange={(e) => setProntuario({...prontuario, diagnostico: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Conduta / Prescrição Médica</label>
+                <textarea
+                  className="w-full border border-gray-300 rounded-lg p-3 shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
+                  rows="2"
+                  placeholder="Medicamentos, dosagem, orientações ou exames solicitados..."
+                  value={prontuario.prescricao}
+                  onChange={(e) => setProntuario({...prontuario, prescricao: e.target.value})}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setModoAtendimento(false)}
+                className="px-5 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition"
+              >
+                Cancelar Atendimento
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-2.5 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 shadow-sm transition"
+              >
+                Finalizar e Salvar Prontuário
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* 🖥️ MODAL DE DETALHES DO AGENDAMENTO */}
+      {modalAberto && eventoSelecionado && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full border border-gray-150 overflow-hidden transform scale-100 transition-all">
+            
+            {/* Header do Modal */}
+            <div className="bg-purple-700 px-6 py-4 flex justify-between items-center text-white">
+              <h3 className="text-lg font-bold">Detalhes do Agendamento</h3>
+              <button 
+                onClick={() => setModalAberto(false)}
+                className="text-white/80 hover:text-white font-bold text-xl outline-none"
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Corpo do Modal */}
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Paciente</label>
+                <p className="text-lg font-semibold text-gray-800">{eventoSelecionado.paciente_nome}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Data e Horário</label>
+                  <p className="text-sm font-medium text-gray-700">
+                    {new Date(eventoSelecionado.start).toLocaleDateString('pt-BR')} às {new Date(eventoSelecionado.start).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Status</label>
+                  <span className={`inline-block mt-1 text-xs px-2.5 py-1 rounded-full font-semibold uppercase tracking-wide shadow-sm
+                    ${eventoSelecionado.status?.toLowerCase() === 'atendido' ? 'bg-emerald-100 text-emerald-800' : 
+                      eventoSelecionado.status?.toLowerCase() === 'cancelado' ? 'bg-red-100 text-red-800' : 'bg-purple-100 text-purple-800'}`}
+                  >
+                    {eventoSelecionado.status || 'Pendente'}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Queixa / Motivo Informado</label>
+                <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-100 mt-1 italic">
+                  "{eventoSelecionado.motivo || 'Nenhum motivo informado pelo paciente.'}"
+                </p>
+              </div>
+            </div>
+
+            {/* Rodapé do Modal */}
+            <div className="bg-gray-50 px-6 py-4 flex justify-end gap-2 border-t border-gray-100">
+              <button
+                onClick={() => setModalAberto(false)}
+                className="px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition text-sm"
+              >
+                Fechar
+              </button>
+              
+              {/* O botão Atender agora dispara a troca de tela! */}
+              {eventoSelecionado.status?.toLowerCase() !== 'atendido' && (
+                <button
+                  onClick={iniciarAtendimento}
+                  className="px-5 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 shadow-sm transition text-sm"
+                >
+                  Atender Paciente
+                </button>
+              )}
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }

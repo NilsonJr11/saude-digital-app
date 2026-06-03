@@ -11,32 +11,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 try {
     include 'conexao.php';
 
-    // Aceita o ID do médico tanto por URL (GET) quanto por JSON (POST)
-    $medico_id = $_GET['medico_id'] ?? $_GET['medico'] ?? null;
-    
-    if (!$medico_id) {
-        $dados = json_decode(file_get_contents("php://input"), true);
-        $medico_id = $dados['medico_id'] ?? $dados['medico'] ?? null;
-    }
+    $medico_id = (int)($_GET['medico_id'] ?? 23);
 
-    // Se não for passado nenhum ID, podemos usar temporariamente o ID 1 (Dr. Ricardo) para não travar a tela
-    if (!$medico_id) {
-        $medico_id = 1; 
-    }
-
-    // Query robusta trazendo os dados da agenda juntamente com o nome do paciente
+    // 🎯 O Segredo desvendado: Relacionando a agenda com a tabela 'usuarios'
     $sql = "SELECT 
                 a.id, 
                 a.data_hora, 
                 a.motivo, 
-                a.status,
+                a.status, 
+                a.paciente_id, 
+                a.medico_id, 
                 p.nome AS paciente_nome 
             FROM agenda a
-            LEFT JOIN pacientes p ON a.paciente_id = p.id
-            WHERE a.medico_id = ?
+            LEFT JOIN usuarios p ON a.paciente_id = p.id 
+            WHERE a.medico_id = ? 
             ORDER BY a.data_hora ASC";
-
+    
     $stmt = $conexao->prepare($sql);
+    if (!$stmt) {
+        throw new Exception("Erro na estrutura da tabela: " . $conexao->error);
+    }
+    
     $stmt->bind_param("i", $medico_id);
     $stmt->execute();
     $resultado = $stmt->get_result();
@@ -44,26 +39,30 @@ try {
     $eventos = [];
 
     while ($linha = $resultado->fetch_assoc()) {
-        // Define a cor do card no calendário baseado no status atual
-        $cor = '#7c3aed'; // Roxo padrão (Pendente)
-        if ($linha['status'] === 'atendido' || $linha['status'] === 'ATENDIDO') {
+        $cor = '#7c3aed'; // Roxo (Pendente)
+        $status_limpo = strtolower($linha['status']);
+        
+        if ($status_limpo === 'atendido') {
             $cor = '#10b981'; // Verde
-        } elseif ($linha['status'] === 'cancelado' || $linha['status'] === 'CANCELADO') {
+        } elseif ($status_limpo === 'cancelado') {
             $cor = '#ef4444'; // Vermelho
         }
 
-        // Extrai apenas o horário (HH:MM) para o título
         $horario = date('H:i', strtotime($linha['data_hora']));
+        
+        // Se o usuário não tiver nome por algum motivo, usa o ID como plano B
+        $nome_paciente = !empty($linha['paciente_nome']) ? $linha['paciente_nome'] : "Paciente #" . $linha['paciente_id'];
 
         $eventos[] = [
             "id" => $linha['id'],
-            "title" => $horario . " - " . ($linha['paciente_nome'] ?? 'Paciente Não Identificado'),
-            "start" => str_replace(' ', 'T', $linha['data_hora']), // Formato ISO exigido pelo FullCalendar
+            "title" => $horario . " - " . $nome_paciente, 
+            "start" => str_replace(' ', 'T', $linha['data_hora']),
             "backgroundColor" => $cor,
             "borderColor" => $cor,
             "extendedProps" => [
                 "status" => $linha['status'],
-                "motivo" => $linha['motivo']
+                "motivo" => $linha['motivo'],
+                "paciente_nome" => $nome_paciente
             ]
         ];
     }
@@ -74,7 +73,7 @@ try {
     http_response_code(500);
     echo json_encode([
         "error" => true,
-        "mensagem" => "Erro ao carregar agenda: " . $e->getMessage()
+        "mensagem" => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
 }
 ?>
