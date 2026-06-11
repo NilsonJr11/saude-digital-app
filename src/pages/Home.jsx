@@ -291,12 +291,19 @@ export default function Home() {
         </div>
       </div>
 
-      {/* SEÇÃO DE EXAMES */}
+      {/* SEÇÃO DE EXAMES dentro do Home.jsx */}
       <div className="container mx-auto px-4 mt-20 text-center max-w-4xl">
         <div className="bg-white p-12 rounded-[50px] shadow-2xl border-4 border-indigo-50 inline-block w-full">
           <h2 className="text-4xl font-black text-slate-800 mb-4">Precisa de Exames?</h2>
           <p className="text-gray-500 font-bold mb-8 text-lg">Agende seus exames laboratoriais e de imagem com rapidez.</p>
-          <button onClick={() => navigate('/my-appointments')} className="bg-indigo-600 text-white px-12 py-6 rounded-[30px] font-black text-xl shadow-xl hover:bg-slate-900 transition-all">ACESSAR PORTAL DE EXAMES</button>
+          
+          {/* 🔄 CORRIGIDO: Agora apontando para a rota que acabamos de criar! */}
+          <button 
+            onClick={() => navigate('/agendamento-exames')} 
+            className="bg-indigo-600 text-white px-12 py-6 rounded-[30px] font-black text-xl shadow-xl hover:bg-slate-900 transition-all"
+          >
+            ACESSAR PORTAL DE EXAMES
+          </button>
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ClipboardList, Pill, Save, ArrowLeft, Printer } from 'lucide-react';
-import toast from 'react-hot-toast'; // Certifique-react de ter o toast importado
+import { toast } from 'react-hot-toast'; 
 
 export default function MedicalRecord() {
   const { id } = useParams();
@@ -9,8 +9,6 @@ export default function MedicalRecord() {
   const [agendamento, setAgendamento] = useState(null);
   const [evolucao, setEvolucao] = useState("");
   const [prescricao, setPrescricao] = useState("");
-  
-  const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'));
 
   const imprimirPrescricao = () => {
     window.print();
@@ -35,39 +33,56 @@ export default function MedicalRecord() {
       .catch(err => toast.error("Erro ao carregar dados do paciente"));
   }, [id]);
 
-  // 2. Função Unificada para Salvar no MariaDB
+  // 2. Função Corrigida e Interligada com suas variáveis
   const finalizarAtendimento = async () => {
-    if (!evolucao || !prescricao) {
-      toast.error("Por favor, preencha a evolução e a prescrição.");
+    // 🕵️‍♂️ Resgata o médico logado com segurança de chaves alternadas do localStorage
+    const doutor = JSON.parse(localStorage.getItem('usuarioLogado')) || JSON.parse(localStorage.getItem('usuario_logado'));
+    const medicoId = doutor?.id || doutor?.id_usuario || 27; // ID 27 como fallback de segurança para testes
+
+    const payload = {
+      agenda_id: Number(id),                       // Pega direto da URL (/prontuario/12)
+      paciente_id: Number(agendamento?.paciente_id), // Pega do estado preenchido pelo useEffect
+      medico_id: Number(medicoId),                 // ID do médico autenticado
+      sintomas: evolucao,                          // Seu textarea de Evolução Clínica
+      diagnostico: "Atendimento Realizado",         // Campo padrão exigido pelo banco
+      prescricao: prescricao                       // Seu textarea de Prescrição
+    };
+
+    // Validação de segurança antes de disparar o fetch
+    if (!payload.agenda_id || !payload.paciente_id) {
+      toast.error("Erro: Dados do agendamento ou paciente não localizados.");
       return;
     }
 
-    const dadosAtendimento = {
-      agendamento_id: id,
-      paciente_id: agendamento.paciente_id,
-      medico_id: usuarioLogado?.id && !isNaN(usuarioLogado.id) ? Number(usuarioLogado.id) : 1,
-      evolucao: evolucao,
-      prescricao: prescricao
-    };
-
     try {
-      const response = await fetch('http://localhost/saude-digital-api/finalizar_atendimento.php', {
+      const response = await fetch('http://localhost/saude-digital-api/salvar_prontuario.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dadosAtendimento)
+        body: JSON.stringify(payload)
       });
-      
-      const res = await response.json();
 
-      if (res.status === "success") {
-        toast.success(`Atendimento de ${agendamento.paciente} finalizado com sucesso!`);
-        navigate('/agenda-medica'); 
+      if (!response.ok) throw new Error("Resposta inválida do servidor.");
+      
+      const resultado = await response.json();
+
+      if (resultado.sucesso) {
+        toast.success("🎉 Prontuário salvo e consulta finalizada!");
+        
+        // Limpa os campos após salvar
+        setEvolucao('');
+        setPrescricao('');
+        
+        // Retorna para a agenda médica após 1.5 segundos para o médico ver o toast de sucesso
+        setTimeout(() => {
+          navigate('/agenda-medica');
+        }, 1500);
+        
       } else {
-        toast.error("Erro ao salvar: " + res.message);
+        toast.error("Erro no PHP: " + resultado.erro);
       }
     } catch (error) {
-      console.error(error);
-      toast.error("Erro de conexão com o servidor.");
+      console.error("Erro na requisição:", error);
+      toast.error("Erro ao conectar com o servidor para salvar.");
     }
   };
 

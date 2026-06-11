@@ -11,6 +11,7 @@ import { Link } from 'react-router-dom';
 import ExamesDetalhes from './pages/ExamesDetalhes';
 import ExamsList from './pages/ExamsList';
 import NotFound from './pages/NotFound';
+import AgendamentoExames from './pages/AgendamentoExames';
 
 
 // Componente de proteção de rotas restritas
@@ -141,6 +142,11 @@ function ConteudoApp() {
 
         {/* Rota Coringa para links corrompidos ou 404 (Redireciona para a Home) */}
         <Route path="*" element={<Navigate to="/" replace />} />
+
+        {/* 📋 Rotas de Exames */}
+        <Route path="/agendamento-exames" element={<AgendamentoExames />} /> {/* 🌟 Adicione esta linha */}
+        <Route path="/exames" element={<ExamsList />} />
+        <Route path="/exames/:id" element={<ExamesDetalhes />} />
       </Routes>
     </>
   );
