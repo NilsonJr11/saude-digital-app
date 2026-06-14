@@ -30,7 +30,7 @@ export default function AgendaMedica() {
   // Carrega os agendamentos da API
   const carregarAgenda = async () => {
     try {
-      const response = await fetch(`http://localhost/saude-digital-api/get_agenda_medico.php?medico_id=${medicoLogado.id}`);
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/listar_agendamentos.php`);
       if (!response.ok) throw new Error("Erro ao buscar dados do servidor");
       
       const dados = await response.json();

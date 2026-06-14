@@ -21,7 +21,7 @@ export default function DashboardSecretaria() {
   // 1. Carrega as Consultas do Banco
   const carregarDadosDoBanco = async () => {
     try {
-      const response = await fetch('http://localhost/saude-digital-api/listar_consultas.php');
+      const response = await fetch (`${import.meta.env.VITE_API_BASE_URL}/listar_consultas.php`);
       if (!response.ok) {
         throw new Error(`Servidor respondeu com status ${response.status}`);
       }
@@ -42,7 +42,7 @@ export default function DashboardSecretaria() {
   // 2. Carrega os Usuários do Banco e Separa Médicos de Pacientes
   const carregarUsuariosDoBanco = async () => {
     try {
-      const response = await fetch('http://localhost/saude-digital-api/listar_usuarios.php');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/listar_usuarios.php`);
       if (!response.ok) {
         throw new Error(`Servidor respondeu com status ${response.status}`);
       }
@@ -69,7 +69,7 @@ export default function DashboardSecretaria() {
   // 3. Altera o Status da Consulta dinamicamente (Confirmar, Cancelar, Atendido)
   const alterarStatusConsulta = async (id, novoStatus) => {
     try {
-      const response = await fetch('http://localhost/saude-digital-api/alterar_status.php', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/atualizar_status_consulta.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, status: novoStatus })
@@ -94,7 +94,7 @@ export default function DashboardSecretaria() {
     }
 
     try {
-      const response = await fetch('http://localhost/saude-digital-api/agendar_consulta_home.php', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/agendar_consulta.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(novoAgendamento)

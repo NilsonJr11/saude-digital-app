@@ -30,7 +30,7 @@ export default function MyAppointments() {
     // 1️⃣ BUSCA AS CONSULTAS REAIS NO BANCO DE DADOS (PHP)
     try {
       console.log(`Buscando consultas para o paciente ID: ${pacienteId}`);
-      const response = await fetch(`http://localhost/saude-digital-api/listar_consultas_paciente.php?paciente_id=${pacienteId}`);
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/listar_consultas_paciente.php?paciente_id=1`)
       if (response.ok) {
         const dados = await response.json();
         console.log("Dados recebidos do PHP:", dados);
@@ -66,21 +66,23 @@ export default function MyAppointments() {
   }, []);
 
   const handleDesmarcar = async (id) => {
-    if (window.confirm("Deseja realmente desmarcar este agendamento?")) {
-      try {
-        const response = await fetch(`http://localhost/saude-digital-api/desmarcar_consulta.php?id=${id}`, { method: 'POST' });
-        const resultado = await response.json();
-        if (resultado.success) {
-          alert("Agendamento desmarcado com sucesso!");
-          buscarConsultasDoPaciente(); 
-        } else {
-          alert("Erro ao desmarcar: " + resultado.error);
-        }
-      } catch (error) {
-        alert("Erro ao conectar com o servidor.");
+  if (window.confirm("Deseja realmente desmarcar este agendamento?")) {
+    try {
+      // 🔄 CORREÇÃO: Trocando o localhost fixo pela sua variável dinâmica
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/desmarcar_consulta.php?id=${id}`, { method: 'POST' });
+      
+      const resultado = await response.json();
+      if (resultado.success) {
+        alert("Agendamento desmarcado com sucesso!");
+        buscarConsultasDoPaciente(); 
+      } else {
+        alert("Erro ao desmarcar: " + resultado.error);
       }
+    } catch (error) {
+      alert("Erro ao conectar com o servidor.");
     }
-  };
+  }
+};
 
   return (
     <div className="max-w-4xl mx-auto p-8 min-h-screen font-sans bg-gray-50/30">

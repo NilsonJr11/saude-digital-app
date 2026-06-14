@@ -6,7 +6,7 @@ export default function ListaPacientes() {
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost/saude-digital-api/listar_usuarios.php')
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/listar_pacientes.php`)
       .then((response) => {
         if (!response.ok) throw new Error('Erro ao conectar com o servidor da API.');
         return response.json();
