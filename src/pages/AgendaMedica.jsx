@@ -27,32 +27,42 @@ export default function AgendaMedica() {
     nome: "Dr. Ricardo Vaz"
   };
 
-  // Carrega os agendamentos da API
-  const response = await fetch('https://saudedigital.alwaysdata.net/listar_agenda.php');
-  if (response.ok) {
-    const dados = await response.json();
-    
-    // 1. Filtra para garantir que só apareçam as consultas DESTE médico (ID 23)
-    const consultasDoMedico = dados.filter(item => Number(item.medico_id) === 23);
-    
-    // 2. Formata os dados preenchendo todos os padrões de propriedades que calendários exigem
-    const dadosProntosParaOCalendario = consultasDoMedico.map(item => {
-      const apenasData = item.data_hora ? item.data_hora.split(' ')[0] : ''; // Pega '2026-06-17'
-      const apenasHora = item.data_hora ? item.data_hora.split(' ')[1].substring(0, 5) : ''; // Pega '09:00'
+  // 🛠️ FUNÇÃO CORRIGIDA: Agora é uma função assíncrona chamada carregarAgenda
+  const carregarAgenda = async () => {
+    try {
+      const response = await fetch('https://saudedigital.alwaysdata.net/listar_agenda.php');
+      if (response.ok) {
+        const dados = await response.json();
+        
+        // 1. Filtra para garantir que só apareçam as consultas DESTE médico (ID 23)
+        const consultasDoMedico = dados.filter(item => Number(item.medico_id) === 23);
+        
+        // 2. Formata os dados preenchendo todos os padrões de propriedades que calendários exigem
+        const dadosProntosParaOCalendario = consultasDoMedico.map(item => {
+          const apenasData = item.data_hora ? item.data_hora.split(' ')[0] : ''; 
+          const apenasHora = item.data_hora ? item.data_hora.split(' ')[1].substring(0, 5) : ''; 
 
-      return {
-        ...item,
-        title: item.paciente_name || "Consulta Paciente", // O título que aparece no bloco do calendário
-        start: item.data_hora, // Formato completo que a maioria das bibliotecas de calendário exige
-        date: apenasData,      // Caso seu calendário use .date
-        data: apenasData,      // Caso seu calendário use .data
-        hora: apenasHora       // Caso seu calendário use .hora
-      };
-    });
+          return {
+            ...item,
+            id: item.id,
+            title: item.paciente_name || "Consulta Paciente", 
+            start: item.data_hora, 
+            date: apenasData,      
+            data: apenasData,      
+            hora: apenasHora,
+            // Sincroniza o paciente_name do banco com o paciente_nome usado no resto do código
+            paciente_nome: item.paciente_name || "Paciente" 
+          };
+        });
 
-  // 3. Salva no estado correto do seu componente (substitua pelo nome da sua função, ex: setEvents ou setAgendamentos)
-  setEvents(dadosProntosParaOCalendario); 
-}
+        // 3. Salva usando o termo correto em português: setEventos
+        setEventos(dadosProntosParaOCalendario); 
+      }
+    } catch (error) {
+      console.error("Erro ao carregar agenda:", error);
+      setErro("Erro de conexão ao buscar os dados da agenda.");
+    }
+  };
 
   useEffect(() => {
     carregarAgenda();
@@ -73,24 +83,20 @@ export default function AgendaMedica() {
 
   // Acionado ao clicar no botão "Atender"
   const iniciarAtendimento = () => {
-    setModalAberto(false); // Fecha o modal de detalhes
+    setModalAberto(false); 
     setProntuario({
       queixa: eventoSelecionado.motivo || '',
       exameFisico: '',
       diagnostico: '',
       prescricao: ''
     });
-    setModoAtendimento(true); // Abre a tela de prontuário
+    setModoAtendimento(true); 
   };
 
-  // Envio do Prontuário preenchido (Próximo passo: Criar essa API)
+  // Envio do Prontuário preenchido
   const salvarAtendimento = async (e) => {
     e.preventDefault();
-    
-    // Por enquanto, mostraremos um alerta simulando o sucesso antes de criarmos o arquivo PHP
     alert(`Atendimento do paciente ${eventoSelecionado.paciente_nome} salvo com sucesso!`);
-    
-    // Reseta as telas e recarrega a agenda
     setModoAtendimento(false);
     setEventoSelecionado(null);
     carregarAgenda();
@@ -138,7 +144,7 @@ export default function AgendaMedica() {
           />
         </div>
       ) : (
-        /* 🩺 TELA DE ATENDIMENTO / EVOLUÇÃO MÉDICA */
+        /* 🩺 TELA DE ATENDIMENTO */
         <div className="bg-white rounded-xl shadow-md border border-gray-150 overflow-hidden max-w-4xl mx-auto">
           <div className="bg-gradient-to-r from-purple-700 to-indigo-800 p-6 text-white">
             <span className="text-xs font-bold uppercase tracking-wider bg-white/20 px-2 py-1 rounded">Atendimento em Andamento</span>
@@ -166,7 +172,6 @@ export default function AgendaMedica() {
               <input
                 type="text"
                 className="w-full border border-gray-300 rounded-lg p-3 shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
-                rows="3"
                 placeholder="PA, FC, Temperatura, Ausculta, observações físicas gerais..."
                 value={prontuario.exameFisico}
                 onChange={(e) => setProntuario({...prontuario, exameFisico: e.target.value})}
@@ -220,7 +225,6 @@ export default function AgendaMedica() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full border border-gray-150 overflow-hidden transform scale-100 transition-all">
             
-            {/* Header do Modal */}
             <div className="bg-purple-700 px-6 py-4 flex justify-between items-center text-white">
               <h3 className="text-lg font-bold">Detalhes do Agendamento</h3>
               <button 
@@ -231,7 +235,6 @@ export default function AgendaMedica() {
               </button>
             </div>
 
-            {/* Corpo do Modal */}
             <div className="p-6 space-y-4">
               <div>
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Paciente</label>
@@ -264,7 +267,6 @@ export default function AgendaMedica() {
               </div>
             </div>
 
-            {/* Rodapé do Modal */}
             <div className="bg-gray-50 px-6 py-4 flex justify-end gap-2 border-t border-gray-100">
               <button
                 onClick={() => setModalAberto(false)}
@@ -273,7 +275,6 @@ export default function AgendaMedica() {
                 Fechar
               </button>
               
-              {/* O botão Atender agora dispara a troca de tela! */}
               {eventoSelecionado.status?.toLowerCase() !== 'atendido' && (
                 <button
                   onClick={iniciarAtendimento}
