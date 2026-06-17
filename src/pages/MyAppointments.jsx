@@ -30,7 +30,7 @@ export default function MyAppointments() {
     // 1️⃣ BUSCA AS CONSULTAS REAIS NO BANCO DE DADOS (PHP)
     try {
       console.log(`Buscando consultas para o paciente ID: ${pacienteId}`);
-      const response = await fetch('https://saudedigital.alwaysdata.net/buscar_agendamentos.php?id=' + pacienteId);
+      const response = await fetch('https://saudedigital.alwaysdata.net/listar_consultas.php?id=' + pacienteId);
       if (response.ok) {
         const dados = await response.json();
         console.log("Dados recebidos do PHP:", dados);

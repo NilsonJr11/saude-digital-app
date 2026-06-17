@@ -121,7 +121,7 @@ export default function Home() {
     };
 
     try {
-      const response = await fetch('https://saudedigital.alwaysdata.net/marcar_consulta.php', {
+      const response = await fetch('https://saudedigital.alwaysdata.net/salvar_agendamento.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
