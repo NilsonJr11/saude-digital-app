@@ -30,7 +30,7 @@ export default function MyAppointments() {
     // 1️⃣ BUSCA AS CONSULTAS REAIS NO BANCO DE DADOS (PHP)
     try {
       console.log(`Buscando consultas para o paciente ID: ${pacienteId}`);
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/listar_consultas_paciente.php?paciente_id=1`)
+      const response = await fetch('https://saudedigital.alwaysdata.net/buscar_agendamentos.php?id=' + pacienteId);
       if (response.ok) {
         const dados = await response.json();
         console.log("Dados recebidos do PHP:", dados);
@@ -69,7 +69,7 @@ export default function MyAppointments() {
   if (window.confirm("Deseja realmente desmarcar este agendamento?")) {
     try {
       // 🔄 CORREÇÃO: Trocando o localhost fixo pela sua variável dinâmica
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/desmarcar_consulta.php?id=${id}`, { method: 'POST' });
+      const response = await fetch(`https://saudedigital.alwaysdata.net/desmarcar_agendamento.php?id=${id}`);
       
       const resultado = await response.json();
       if (resultado.success) {

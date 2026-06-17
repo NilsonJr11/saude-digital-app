@@ -22,7 +22,7 @@ export default function Home() {
   useEffect(() => {
     const carregarMedicos = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/listar_usuarios.php`);
+        const response = await fetch('https://saudedigital.alwaysdata.net/listar_usuarios.php');
         
         if (!response.ok) {
           throw new Error(`Erro na API: Status ${response.status}`);
@@ -121,7 +121,7 @@ export default function Home() {
     };
 
     try {
-      const response = await fetch('`${import.meta.env.VITE_API_BASE_URL}/marcar_consulta.php`', {
+      const response = await fetch('https://saudedigital.alwaysdata.net/marcar_consulta.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

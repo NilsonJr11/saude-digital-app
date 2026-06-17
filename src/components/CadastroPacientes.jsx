@@ -43,7 +43,7 @@ export default function CadastroPacientes() {
     };
 
     try {
-      const response = await fetch('`${import.meta.env.VITE_API_BASE_URL}/cadastrar_paciente.php`', {
+      const response = await fetch('https://saudedigital.alwaysdata.net/cadastrar_paciente.php`', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

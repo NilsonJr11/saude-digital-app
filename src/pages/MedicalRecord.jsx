@@ -16,7 +16,7 @@ export default function MedicalRecord() {
 
   // 1. Carrega os dados do paciente via API
   useEffect(() => {
-    fetch (`${import.meta.env.VITE_API_BASE_URL}/listar_agendamentos.php`)
+    fetch('https://saudedigital.alwaysdata.net/buscar_agendamentos.php')
       .then(res => res.json())
       .then(dados => {
         const atual = dados.find(a => String(a.id) === String(id));
@@ -55,7 +55,7 @@ export default function MedicalRecord() {
     }
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/finalizar_consulta.php`, {
+      const response = await fetch('https://saudedigital.alwaysdata.net/salvar_prontuario.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
