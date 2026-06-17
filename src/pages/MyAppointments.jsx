@@ -36,18 +36,34 @@ export default function MyAppointments() {
         console.log("Dados recebidos do PHP:", dados);
         
         if (Array.isArray(dados)) {
-          // 🔄 MAPEAMENTO: Transforma os nomes das colunas do banco para o formato que o seu JSX espera
-          consultasBanco = dados.map(item => ({
-            ...item,
-            data: item.data_consulta || item.data, 
-            hora: item.horario || item.hora,       
-            medico: item.nome_medico || item.medico || item.nome
-          }));
+          // 🔄 MAPEAMENTO CORRETO: Corta a string "data_hora" em duas partes
+          consultasBanco = dados.map(item => {
+            let dataFormatada = '---';
+            let horaFormatada = '---';
+
+            if (item.data_hora) {
+              const partes = item.data_hora.split(' '); // Separa pelo espaço: ['2026-05-16', '12:48:59']
+              
+              // Formata a Data para DD/MM/AAAA
+              if (partes[0]) {
+                const [ano, mes, dia] = partes[0].split('-');
+                dataFormatada = `${dia}/${mes}/${ano}`; // Vira '16/05/2026'
+              }
+              
+              // Corta os segundos da Hora (12:48:59 vira 12:48)
+              if (partes[1]) {
+                horaFormatada = partes[1].substring(0, 5);
+              }
+            }
+
+            return {
+              ...item,
+              data: dataFormatada,
+              hora: horaFormatada,
+              medico: item.medico_nome || item.medico || 'Médico do Plantão'
+            };
+          });
         }
-      }
-    } catch (error) {
-      console.error("Erro ao buscar agendamentos do banco:", error);
-    }
 
     // 2️⃣ 🔬 BUSCA OS EXAMES SALVOS LOCALMENTE NO LOCALSTORAGE
     const examesLocaisRaw = localStorage.getItem('agendamentos_exames_local');
@@ -65,6 +81,10 @@ export default function MyAppointments() {
 
     // 3️⃣ 🔀 UNIFICA AS DUAS LISTAS EM UMA SÓ (Agora as consultas do banco já estão corrigidas!)
     setAgendamentos([...consultasBanco, ...examesLocais]);
+  }
+    } catch (error) {
+      console.error('Erro ao buscar consultas do paciente:', error);
+    }
   };
 
   useEffect(() => {
