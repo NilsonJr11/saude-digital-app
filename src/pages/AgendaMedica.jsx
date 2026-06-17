@@ -28,22 +28,31 @@ export default function AgendaMedica() {
   };
 
   // Carrega os agendamentos da API
-  const carregarAgenda = async () => {
-    try {
-      const response = await fetch('https://saudedigital.alwaysdata.net/listar_agenda.php');
-      if (!response.ok) throw new Error("Erro ao buscar dados do servidor");
-      
-      const dados = await response.json();
-      if (Array.isArray(dados)) {
-        setEventos(dados);
-        setErro(null);
-      } else {
-        setErro("Formato de dados inválido recebido da API.");
-      }
-    } catch (err) {
-      setErro(err.message);
-    }
-  };
+  const response = await fetch('https://saudedigital.alwaysdata.net/listar_agenda.php');
+  if (response.ok) {
+    const dados = await response.json();
+    
+    // 1. Filtra para garantir que só apareçam as consultas DESTE médico (ID 23)
+    const consultasDoMedico = dados.filter(item => Number(item.medico_id) === 23);
+    
+    // 2. Formata os dados preenchendo todos os padrões de propriedades que calendários exigem
+    const dadosProntosParaOCalendario = consultasDoMedico.map(item => {
+      const apenasData = item.data_hora ? item.data_hora.split(' ')[0] : ''; // Pega '2026-06-17'
+      const apenasHora = item.data_hora ? item.data_hora.split(' ')[1].substring(0, 5) : ''; // Pega '09:00'
+
+      return {
+        ...item,
+        title: item.paciente_name || "Consulta Paciente", // O título que aparece no bloco do calendário
+        start: item.data_hora, // Formato completo que a maioria das bibliotecas de calendário exige
+        date: apenasData,      // Caso seu calendário use .date
+        data: apenasData,      // Caso seu calendário use .data
+        hora: apenasHora       // Caso seu calendário use .hora
+      };
+    });
+
+  // 3. Salva no estado correto do seu componente (substitua pelo nome da sua função, ex: setEvents ou setAgendamentos)
+  setEvents(dadosProntosParaOCalendario); 
+}
 
   useEffect(() => {
     carregarAgenda();
