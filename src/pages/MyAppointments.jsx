@@ -34,15 +34,22 @@ export default function MyAppointments() {
       if (response.ok) {
         const dados = await response.json();
         console.log("Dados recebidos do PHP:", dados);
+        
         if (Array.isArray(dados)) {
-          consultasBanco = dados;
+          // 🔄 MAPEAMENTO: Transforma os nomes das colunas do banco para o formato que o seu JSX espera
+          consultasBanco = dados.map(item => ({
+            ...item,
+            data: item.data_consulta || item.data, 
+            hora: item.horario || item.hora,       
+            medico: item.nome_medico || item.medico || item.nome
+          }));
         }
       }
     } catch (error) {
       console.error("Erro ao buscar agendamentos do banco:", error);
     }
 
-    // 2️⃣ 🔬 NOVIDADE: BUSCA OS EXAMES SALVOS LOCALMENTE NO LOCALSTORAGE
+    // 2️⃣ 🔬 BUSCA OS EXAMES SALVOS LOCALMENTE NO LOCALSTORAGE
     const examesLocaisRaw = localStorage.getItem('agendamentos_exames_local');
     let examesLocais = [];
     
@@ -56,8 +63,7 @@ export default function MyAppointments() {
       }
     }
 
-    // 3️⃣ 🔀 UNIFICA AS DUAS LISTAS EM UMA SÓ
-    // Juntamos os arrays com o operador spread [...]
+    // 3️⃣ 🔀 UNIFICA AS DUAS LISTAS EM UMA SÓ (Agora as consultas do banco já estão corrigidas!)
     setAgendamentos([...consultasBanco, ...examesLocais]);
   };
 

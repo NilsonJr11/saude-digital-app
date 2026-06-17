@@ -30,7 +30,7 @@ export default function AgendaMedica() {
   // Carrega os agendamentos da API
   const carregarAgenda = async () => {
     try {
-      const response = await fetch(`https://saudedigital.alwaysdata.net/listar_agendamentos.php`);
+      const response = await fetch('https://saudedigital.alwaysdata.net/listar_agenda.php');
       if (!response.ok) throw new Error("Erro ao buscar dados do servidor");
       
       const dados = await response.json();
