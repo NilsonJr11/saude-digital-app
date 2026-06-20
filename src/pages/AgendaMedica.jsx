@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -27,15 +27,17 @@ export default function AgendaMedica() {
     nome: "Dr. Ricardo Vaz"
   };
 
-  // 🛠️ FUNÇÃO CORRIGIDA: Agora é uma função assíncrona chamada carregarAgenda
-  // 1. No carregamento da agenda, certifique-se de herdar o paciente_id do banco
-  const carregarAgenda = async () => {
+  // Carrega os agendamentos da API de forma assíncrona
+  const carregarAgenda = useCallback(async () => {
     try {
       const response = await fetch('https://saudedigital.alwaysdata.net/listar_agenda.php');
       if (response.ok) {
         const dados = await response.json();
+        
+        // Filtra para garantir que só apareçam as consultas DESTE médico (ID 23)
         const consultasDoMedico = dados.filter(item => Number(item.medico_id) === 23);
         
+        // Formata os dados preenchendo todos os padrões de propriedades que o FullCalendar exige
         const dadosProntosParaOCalendario = consultasDoMedico.map(item => {
           const apenasData = item.data_hora ? item.data_hora.split(' ')[0] : ''; 
           const apenasHora = item.data_hora ? item.data_hora.split(' ')[1].substring(0, 5) : ''; 
@@ -49,17 +51,23 @@ export default function AgendaMedica() {
             data: apenasData,      
             hora: apenasHora,
             paciente_nome: item.paciente_name || "Paciente",
-            paciente_id: item.paciente_id // ✨ Garante que salvamos o ID aqui
+            paciente_id: item.paciente_id
           };
         });
+
         setEventos(dadosProntosParaOCalendario); 
       }
     } catch (error) {
+      console.error("Erro ao buscar agenda:", error);
       setErro("Erro de conexão ao buscar os dados da agenda.");
     }
-  };
+  }, []);
 
-  // 2. No clique do evento, repasse o paciente_id para o estado selecionado
+  useEffect(() => {
+    carregarAgenda();
+  }, [carregarAgenda]);
+
+  // Quando o médico clica em um agendamento no calendário
   const handleEventClick = (info) => {
     setEventoSelecionado({
       id: info.event.id,
@@ -68,21 +76,33 @@ export default function AgendaMedica() {
       status: info.event.extendedProps.status,
       motivo: info.event.extendedProps.motivo,
       paciente_nome: info.event.extendedProps.paciente_nome,
-      paciente_id: info.event.extendedProps.paciente_id // ✨ Repassa aqui
+      paciente_id: info.event.extendedProps.paciente_id
     });
     setModalAberto(true);
   };
 
-  // 3. Na função de salvar, envie o paciente_id para a nova API
+  // Acionado ao clicar no botão "Atender"
+  const iniciarAtendimento = () => {
+    setModalAberto(false); 
+    setProntuario({
+      queixa: eventoSelecionado.motivo || '',
+      exameFisico: '',
+      diagnostico: '',
+      prescricao: ''
+    });
+    setModoAtendimento(true); 
+  };
+
+  // Envio do Prontuário preenchido para salvar no Banco de Dados via API PHP
   const salvarAtendimento = async (e) => {
     e.preventDefault();
     
     const dadosProntuario = {
       agenda_id: eventoSelecionado.id,
-      paciente_id: eventoSelecionado.paciente_id, // ✨ Enviando o ID real do paciente
+      paciente_id: eventoSelecionado.paciente_id,
       medico_id: medicoLogado.id,
       queixa: prontuario.queixa,
-      exame_fisico: prontuario.exameFisico,
+      exame_physico: prontuario.exameFisico, // mapeado para enviar ao backend
       diagnostico: prontuario.diagnostico,
       prescricao: prontuario.prescricao
     };
@@ -101,51 +121,14 @@ export default function AgendaMedica() {
         setModoAtendimento(false);
         setEventoSelecionado(null);
         setProntuario({ queixa: '', exameFisico: '', diagnostico: '', prescricao: '' });
-        carregarAgenda(); // Atualiza o status no calendário
+        carregarAgenda(); 
       } else {
         alert(`Erro ao salvar: ${resultado.erro || 'Tente novamente.'}`);
       }
     } catch (error) {
-      alert("Erro de conexão ao tentar salvar o prontuário.");
+      console.error("Erro na requisição:", error);
+      alert("Erro de conexão com o servidor ao tentar salvar o prontuário.");
     }
-  };
-
-  useEffect(() => {
-    carregarAgenda();
-  }, []);
-
-  // Quando o médico clica em um agendamento no calendário
-  const handleEventClick = (info) => {
-    setEventoSelecionado({
-      id: info.event.id,
-      title: info.event.title,
-      start: info.event.start,
-      status: info.event.extendedProps.status,
-      motivo: info.event.extendedProps.motivo,
-      paciente_nome: info.event.extendedProps.paciente_nome
-    });
-    setModalAberto(true);
-  };
-
-  // Acionado ao clicar no botão "Atender"
-  const iniciarAtendimento = () => {
-    setModalAberto(false); 
-    setProntuario({
-      queixa: eventoSelecionado.motivo || '',
-      exameFisico: '',
-      diagnostico: '',
-      prescricao: ''
-    });
-    setModoAtendimento(true); 
-  };
-
-  // Envio do Prontuário preenchido
-  const salvarAtendimento = async (e) => {
-    e.preventDefault();
-    alert(`Atendimento do paciente ${eventoSelecionado.paciente_nome} salvo com sucesso!`);
-    setModoAtendimento(false);
-    setEventoSelecionado(null);
-    carregarAgenda();
   };
 
   return (
@@ -190,7 +173,7 @@ export default function AgendaMedica() {
           />
         </div>
       ) : (
-        /* 🩺 TELA DE ATENDIMENTO */
+        /* 🩺 TELA DE ATENDIMENTO / EVOLUÇÃO MÉDICA */
         <div className="bg-white rounded-xl shadow-md border border-gray-150 overflow-hidden max-w-4xl mx-auto">
           <div className="bg-gradient-to-r from-purple-700 to-indigo-800 p-6 text-white">
             <span className="text-xs font-bold uppercase tracking-wider bg-white/20 px-2 py-1 rounded">Atendimento em Andamento</span>
@@ -215,9 +198,10 @@ export default function AgendaMedica() {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">Exame Físico / Sinais Vitais</label>
-              <input
-                type="text"
+              {/* Ajustado de input para textarea para aceitar a propriedade rows corretamente */}
+              <textarea
                 className="w-full border border-gray-300 rounded-lg p-3 shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
+                rows="3"
                 placeholder="PA, FC, Temperatura, Ausculta, observações físicas gerais..."
                 value={prontuario.exameFisico}
                 onChange={(e) => setProntuario({...prontuario, exameFisico: e.target.value})}
@@ -268,7 +252,7 @@ export default function AgendaMedica() {
 
       {/* 🖥️ MODAL DE DETALHES DO AGENDAMENTO */}
       {modalAberto && eventoSelecionado && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full border border-gray-150 overflow-hidden transform scale-100 transition-all">
             
             <div className="bg-purple-700 px-6 py-4 flex justify-between items-center text-white">
