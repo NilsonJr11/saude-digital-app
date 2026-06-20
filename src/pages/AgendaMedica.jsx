@@ -28,16 +28,14 @@ export default function AgendaMedica() {
   };
 
   // 🛠️ FUNÇÃO CORRIGIDA: Agora é uma função assíncrona chamada carregarAgenda
+  // 1. No carregamento da agenda, certifique-se de herdar o paciente_id do banco
   const carregarAgenda = async () => {
     try {
       const response = await fetch('https://saudedigital.alwaysdata.net/listar_agenda.php');
       if (response.ok) {
         const dados = await response.json();
-        
-        // 1. Filtra para garantir que só apareçam as consultas DESTE médico (ID 23)
         const consultasDoMedico = dados.filter(item => Number(item.medico_id) === 23);
         
-        // 2. Formata os dados preenchendo todos os padrões de propriedades que calendários exigem
         const dadosProntosParaOCalendario = consultasDoMedico.map(item => {
           const apenasData = item.data_hora ? item.data_hora.split(' ')[0] : ''; 
           const apenasHora = item.data_hora ? item.data_hora.split(' ')[1].substring(0, 5) : ''; 
@@ -50,17 +48,65 @@ export default function AgendaMedica() {
             date: apenasData,      
             data: apenasData,      
             hora: apenasHora,
-            // Sincroniza o paciente_name do banco com o paciente_nome usado no resto do código
-            paciente_nome: item.paciente_name || "Paciente" 
+            paciente_nome: item.paciente_name || "Paciente",
+            paciente_id: item.paciente_id // ✨ Garante que salvamos o ID aqui
           };
         });
-
-        // 3. Salva usando o termo correto em português: setEventos
         setEventos(dadosProntosParaOCalendario); 
       }
     } catch (error) {
-      console.error("Erro ao carregar agenda:", error);
       setErro("Erro de conexão ao buscar os dados da agenda.");
+    }
+  };
+
+  // 2. No clique do evento, repasse o paciente_id para o estado selecionado
+  const handleEventClick = (info) => {
+    setEventoSelecionado({
+      id: info.event.id,
+      title: info.event.title,
+      start: info.event.start,
+      status: info.event.extendedProps.status,
+      motivo: info.event.extendedProps.motivo,
+      paciente_nome: info.event.extendedProps.paciente_nome,
+      paciente_id: info.event.extendedProps.paciente_id // ✨ Repassa aqui
+    });
+    setModalAberto(true);
+  };
+
+  // 3. Na função de salvar, envie o paciente_id para a nova API
+  const salvarAtendimento = async (e) => {
+    e.preventDefault();
+    
+    const dadosProntuario = {
+      agenda_id: eventoSelecionado.id,
+      paciente_id: eventoSelecionado.paciente_id, // ✨ Enviando o ID real do paciente
+      medico_id: medicoLogado.id,
+      queixa: prontuario.queixa,
+      exame_fisico: prontuario.exameFisico,
+      diagnostico: prontuario.diagnostico,
+      prescricao: prontuario.prescricao
+    };
+
+    try {
+      const response = await fetch('https://saudedigital.alwaysdata.net/salvar_prontuario.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dadosProntuario)
+      });
+
+      const resultado = await response.json();
+
+      if (response.ok && resultado.sucesso) {
+        alert(`Atendimento do paciente ${eventoSelecionado.paciente_nome} salvo com sucesso!`);
+        setModoAtendimento(false);
+        setEventoSelecionado(null);
+        setProntuario({ queixa: '', exameFisico: '', diagnostico: '', prescricao: '' });
+        carregarAgenda(); // Atualiza o status no calendário
+      } else {
+        alert(`Erro ao salvar: ${resultado.erro || 'Tente novamente.'}`);
+      }
+    } catch (error) {
+      alert("Erro de conexão ao tentar salvar o prontuário.");
     }
   };
 
