@@ -68,22 +68,30 @@ export default function DashboardSecretaria() {
 
   // 3. Altera o Status da Consulta dinamicamente (Confirmar, Cancelar, Atendido)
   const alterarStatusConsulta = async (id, novoStatus) => {
-    try {
-      const response = await fetch('https://saudedigital.alwaysdata.net/atualizar_status_consulta.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status: novoStatus })
-      });
-      const resultado = await response.json();
-      if (resultado.success) {
-        carregarDadosDoBanco();
-      } else {
-        alert("Erro ao atualizar status: " + resultado.error);
-      }
-    } catch (error) {
-      alert("Erro de conexão com o servidor.");
+  try {
+    const response = await fetch('https://saudedigital.alwaysdata.net/atualizar_status_consulta.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, status: novoStatus })
+    });
+
+    // Captura a resposta bruta como texto para sabermos o que o PHP realmente cuspiu
+    const textoBruto = await response.text();
+    console.log("Resposta bruta do servidor:", textoBruto);
+
+    // Tenta converter o texto para objeto JS
+    const resultado = JSON.parse(textoBruto);
+    
+    if (resultado.success) {
+      carregarDadosDoBanco();
+    } else {
+      alert("Erro do backend: " + (resultado.error || resultado.mensagem));
     }
-  };
+  } catch (error) {
+    console.error("Erro detalhado na requisição:", error);
+    alert("Ocorreu um erro. Verifique o Console (F12) para ver a resposta bruta do servidor.");
+  }
+};
 
   // 4. Cria um agendamento manual pela Administração
   const salvarAgendamentoManual = async (e) => {
