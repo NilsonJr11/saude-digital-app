@@ -10,9 +10,7 @@ import Home from './pages/Home';
 import { Link } from 'react-router-dom';
 import ExamesDetalhes from './pages/ExamesDetalhes';
 import ExamsList from './pages/ExamsList';
-import NotFound from './pages/NotFound';
 import AgendamentoExames from './pages/AgendamentoExames';
-
 
 // Componente de proteção de rotas restritas
 function RotaProtegida({ children, perfilRequerido }) {
@@ -48,7 +46,7 @@ function ConteudoApp() {
   useEffect(() => {
     checarUsuario();
 
-    // 🛡️ O SEGREDO PARA NÃO TRAVAR: Escuta mudanças de login em tempo real
+    // Escuta mudanças de login em tempo real
     window.addEventListener('storage', checarUsuario);
     window.addEventListener('login_efetuado', checarUsuario);
 
@@ -66,14 +64,15 @@ function ConteudoApp() {
 
   return (
     <>
-      {/* HEADER DINÂMICO: Aparece para QUALQUEER usuário logado (inclusive pacientes) */}
+      {/* HEADER DINÂMICO */}
       {user && (
         <header className="bg-slate-900 text-white px-8 py-4 flex justify-between items-center font-sans shadow-md">
           <div className="flex items-center gap-3">
             <div className="flex flex-col">
-              <Link to="/" className="flex items-center gap-2"><span className="font-black text-lg italic tracking-tighter text-white uppercase">
-                Saúde<span className="text-indigo-400">Digital</span> Pro
-              </span>
+              <Link to="/" className="flex items-center gap-2">
+                <span className="font-black text-lg italic tracking-tighter text-white uppercase">
+                  Saúde<span className="text-indigo-400">Digital</span> Pro
+                </span>
               </Link>
             </div>
             <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-full font-bold uppercase ml-2">
@@ -101,14 +100,18 @@ function ConteudoApp() {
       )}
 
       <Routes>
-        {/* Rota Raiz */}
+        {/* Rota Raiz Pública */}
         <Route path="/" element={<Home />} />
 
         {/* Rotas de Autenticação */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Paineis Protegidos */}
+        {/* Catálogo de Exames (Público para Consulta) */}
+        <Route path="/exames" element={<ExamsList />} />
+        <Route path="/exames/:id" element={<ExamesDetalhes />} />
+
+        {/* Paineis Protegidos por Regras de Negócio */}
         <Route path="/dashboard-secretaria" element={
           <RotaProtegida perfilRequerido="secretaria">
             <DashboardSecretaria />
@@ -121,32 +124,29 @@ function ConteudoApp() {
           </RotaProtegida>
         } />
 
-        <Route path="/my-appointments" element={
-          <RotaProtegida perfilRequerido="paciente">
-            <MyAppointments />
-          </RotaProtegida>
-        } />
-        
         <Route path="/medical-record" element={
           <RotaProtegida perfilRequerido="medico">
             <MedicalRecord />
           </RotaProtegida>
         } />
 
-        {/* 🩺 CONEXÃO DE SEGURANÇA: Redireciona médicos se tentarem agendar */}
+        <Route path="/my-appointments" element={
+          <RotaProtegida perfilRequerido="paciente">
+            <MyAppointments />
+          </RotaProtegida>
+        } />
+
+        <Route path="/agendamento-exames" element={
+          <RotaProtegida perfilRequerido="paciente">
+            <AgendamentoExames />
+          </RotaProtegida>
+        } />
+
+        {/* Redireciona médicos se tentarem acessar rotas diretas de ID de agendamento */}
         <Route path="/medico/:id" element={user ? <Navigate to="/my-appointments" replace /> : <Navigate to="/login" replace />} />
 
-        {/* 📋 Rotas de Exames */}
-        <Route path="/exames" element={<ExamsList />} />
-        <Route path="/exames/:id" element={<ExamesDetalhes />} />
-
-        {/* Rota Coringa para links corrompidos ou 404 (Redireciona para a Home) */}
+        {/* Rota Coringa para 404 - SEMPRE NO FINAL DE TUDO */}
         <Route path="*" element={<Navigate to="/" replace />} />
-
-        {/* 📋 Rotas de Exames */}
-        <Route path="/agendamento-exames" element={<AgendamentoExames />} /> {/* 🌟 Adicione esta linha */}
-        <Route path="/exames" element={<ExamsList />} />
-        <Route path="/exames/:id" element={<ExamesDetalhes />} />
       </Routes>
     </>
   );

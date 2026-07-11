@@ -13,6 +13,57 @@ export default function Register() {
   
   const navigate = useNavigate();
 
+  const handleLogin = async (e) => {
+  e.preventDefault();
+  setErro(''); // Limpa erros anteriores
+  
+  // Opcional: crie um estado [carregando, setCarregando] para desativar o botão enquanto processa
+  setCarregando(true); 
+
+  try {
+    // ⚠️ SUBSTITUA pela URL real do seu script na Alwaysdata
+    const urlAPI = 'https://seu-subdominio.alwaysdata.net/login.php'; 
+
+    const resposta = await fetch(urlAPI, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: email.trim().toLowerCase(),
+        senha: senha // Enviado limpo para o PHP fazer o password_verify
+      })
+    });
+
+    const dados = await resposta.json();
+
+    if (dados.success) {
+      // 💾 Salva o objeto do usuário (com o perfil real do banco) no localStorage
+      localStorage.setItem('usuario_logado', JSON.stringify(dados.usuario));
+      
+      // ⚡ Avisa o App.jsx / Contexto para atualizar as rotas protegidas imediatamente
+      window.dispatchEvent(new Event('login_efetuado')); 
+
+      // 🚦 Redirecionamento dinâmico baseado na resposta do MariaDB
+      if (dados.usuario.perfil === 'secretaria') {
+        navigate('/dashboard-secretaria');
+      } else if (dados.usuario.perfil === 'medico') {
+        navigate('/agenda-medica');
+      } else {
+        navigate('/my-appointments'); // Perfil do paciente
+      }
+    } else {
+      // Exibe na tela o erro exato retornado pelo PHP ("E-mail ou senha incorretos")
+      setErro(dados.error); 
+    }
+  } catch (error) {
+    console.error("Erro na requisição de login:", error);
+    setErro("Não foi possível conectar ao servidor. Tente novamente mais tarde.");
+  } finally {
+    setCarregando(false);
+  }
+};
+
   // 🛡️ Máscara de CPF em tempo real (000.000.000-00)
   const handleCpfChange = (e) => {
     let value = e.target.value.replace(/\D/g, ""); // Remove tudo que não é número
@@ -72,27 +123,28 @@ export default function Register() {
     }
 
     // Gravação unificada na chave 'usuarios' usada pelo seu Login
-    const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
-    
-    if (usuarios.find(u => u.email === emailLimpo)) {
-      setErro("Este endereço de e-mail já está cadastrado no sistema!");
-      return;
-    }
-
-    const novoUsuario = { 
-      nome: nome.trim(), 
-      email: emailLimpo, 
-      senha, // Em um sistema real seria encriptada, aqui salvamos para o mock bater
-      cpf, 
-      telefone, 
-      nascimento,
-      genero,
-      perfil: 'paciente',
-      dataCriacao: new Date().toLocaleDateString('pt-BR') 
-    };
-
-    usuarios.push(novoUsuario);
-    localStorage.setItem('usuarios', JSON.stringify(usuarios));
+    fetch('https://seu-subdominio.alwaysdata.net/cadastrar_usuario.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nome: nome.trim(),
+        email: emailLimpo,
+        senha: senha,
+        cpf: cpfLimpo,
+        telefone: telefoneLimpo,
+        nascimento: nascimento
+      })
+    })
+    .then(res => res.json())
+    .then(dados => {
+      if (dados.success) {
+        alert("Conta criada com sucesso no banco de dados! Redirecionando...");
+        navigate('/login');
+      } else {
+        setErro(dados.error);
+      }
+    })
+    .catch(() => setErro("Erro ao conectar com o servidor de banco de dados."));
     
     alert("Conta criada com total segurança! Redirecionando para o login...");
     navigate('/login');
