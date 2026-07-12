@@ -123,7 +123,7 @@ export default function Register() {
     }
 
     // Gravação unificada na chave 'usuarios' usada pelo seu Login
-    fetch('https://seu-subdominio.alwaysdata.net/cadastrar_usuario.php', {
+    fetch('https://saudedigital.alwaysdata.net/cadastrar_usuario.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
