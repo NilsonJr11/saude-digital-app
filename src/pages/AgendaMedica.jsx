@@ -22,13 +22,13 @@ export default function AgendaMedica() {
     prescricao: ''
   });
 
-  //  RECUPERAÇÃO DINÂMICA DO MÉDICO LOGADO (Do LocalStorage ou Fallback)
+  // 🔄 RECUPERAÇÃO DINÂMICA CORRIGIDA (Buscando a chave exata do seu LocalStorage)
   const [medicoLogado] = useState(() => {
-    const salvo = localStorage.getItem('usuario') || localStorage.getItem('user');
+    const salvo = localStorage.getItem('usuario_logado'); // 👈 Mudamos de 'usuario' para 'usuario_logado'
     if (salvo) {
       try {
         const dados = JSON.parse(salvo);
-        // Suporta tanto o objeto de usuário direto quanto aninhado { usuario: {...} }
+        // Como os dados já estão no formato direto {"id": 26, "nome": "..."}, pegamos direto deles:
         const usuario = dados.usuario || dados;
         if (usuario && usuario.id) {
           return {
@@ -40,7 +40,7 @@ export default function AgendaMedica() {
         console.error("Erro ao ler dados de login do localStorage:", e);
       }
     }
-    // Fallback padrão de segurança caso falte o localStorage
+    // Fallback padrão caso não encontre nenhum usuário logado
     return {
       id: 23,
       nome: "Dr. Ricardo Vaz"
