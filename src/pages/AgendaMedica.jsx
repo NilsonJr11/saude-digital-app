@@ -22,10 +22,30 @@ export default function AgendaMedica() {
     prescricao: ''
   });
 
-  const medicoLogado = {
-    id: 23,
-    nome: "Dr. Ricardo Vaz"
-  };
+  //  RECUPERAÇÃO DINÂMICA DO MÉDICO LOGADO (Do LocalStorage ou Fallback)
+  const [medicoLogado] = useState(() => {
+    const salvo = localStorage.getItem('usuario') || localStorage.getItem('user');
+    if (salvo) {
+      try {
+        const dados = JSON.parse(salvo);
+        // Suporta tanto o objeto de usuário direto quanto aninhado { usuario: {...} }
+        const usuario = dados.usuario || dados;
+        if (usuario && usuario.id) {
+          return {
+            id: Number(usuario.id),
+            nome: usuario.nome
+          };
+        }
+      } catch (e) {
+        console.error("Erro ao ler dados de login do localStorage:", e);
+      }
+    }
+    // Fallback padrão de segurança caso falte o localStorage
+    return {
+      id: 23,
+      nome: "Dr. Ricardo Vaz"
+    };
+  });
 
   // Carrega os agendamentos da API de forma assíncrona
   const carregarAgenda = useCallback(async () => {
@@ -34,8 +54,8 @@ export default function AgendaMedica() {
       if (response.ok) {
         const dados = await response.json();
         
-        // Filtra para garantir que só apareçam as consultas DESTE médico (ID 23)
-        const consultasDoMedico = dados.filter(item => Number(item.medico_id) === 23);
+        // 🔄 FILTRO DINÂMICO: Garante que só apareçam as consultas DESTE médico logado
+        const consultasDoMedico = dados.filter(item => Number(item.medico_id) === Number(medicoLogado.id));
         
         // Formata os dados preenchendo todos os padrões de propriedades que o FullCalendar exige
         const dadosProntosParaOCalendario = consultasDoMedico.map(item => {
@@ -61,7 +81,7 @@ export default function AgendaMedica() {
       console.error("Erro ao buscar agenda:", error);
       setErro("Erro de conexão ao buscar os dados da agenda.");
     }
-  }, []);
+  }, [medicoLogado.id]); // Adicionado medicoLogado.id como dependência segura
 
   useEffect(() => {
     carregarAgenda();
@@ -133,7 +153,7 @@ export default function AgendaMedica() {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      {/* Cabeçalho */}
+      {/* Cabeçalho dinâmico */}
       <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Painel Clínico</h1>
@@ -198,7 +218,6 @@ export default function AgendaMedica() {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">Exame Físico / Sinais Vitais</label>
-              {/* Ajustado de input para textarea para aceitar a propriedade rows corretamente */}
               <textarea
                 className="w-full border border-gray-300 rounded-lg p-3 shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
                 rows="3"

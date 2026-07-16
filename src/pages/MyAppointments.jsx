@@ -95,7 +95,7 @@ export default function MyAppointments() {
   if (window.confirm("Deseja realmente desmarcar este agendamento?")) {
     try {
       // 🔄 CORREÇÃO: Trocando o localhost fixo pela sua variável dinâmica
-      const response = await fetch(`https://saudedigital.alwaysdata.net/desmarcar_agendamento.php?id=${id}`);
+      const response = await fetch(`https://saudedigital.alwaysdata.net/desmarcar_consulta.php?id=${id}`);
       
       const resultado = await response.json();
       if (resultado.success) {
