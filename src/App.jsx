@@ -11,6 +11,7 @@ import { Link } from 'react-router-dom';
 import ExamesDetalhes from './pages/ExamesDetalhes';
 import ExamsList from './pages/ExamsList';
 import AgendamentoExames from './pages/AgendamentoExames';
+import RodapeNovo from './components/RodapeNovo';
 
 // Componente de proteção de rotas restritas
 function RotaProtegida({ children, perfilRequerido }) {
@@ -63,8 +64,13 @@ function ConteudoApp() {
   };
 
   return (
-    <>
-      {/* HEADER DINÂMICO */}
+    /* 
+      O container abaixo encapsula todo o app e garante que o rodapé 
+      fique sempre ancorado na parte inferior da tela usando Tailwind 
+    */
+    <div className="flex flex-col min-h-screen">
+      
+      {/* 1. HEADER DINÂMICO (Aparece se o usuário estiver logado) */}
       {user && (
         <header className="bg-slate-900 text-white px-8 py-4 flex justify-between items-center font-sans shadow-md">
           <div className="flex items-center gap-3">
@@ -99,59 +105,67 @@ function ConteudoApp() {
         </header>
       )}
 
-      <Routes>
-        {/* Rota Raiz Pública */}
-        <Route path="/" element={<Home />} />
+      {/* 2. CONTEÚDO PRINCIPAL (O flex-grow expande e empurra o rodapé para o fim da página) */}
+      <main className="flex-grow">
+        <Routes>
+          {/* Rota Raiz Pública */}
+          <Route path="/" element={<Home />} />
 
-        {/* Rotas de Autenticação */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+          {/* Rotas de Autenticação */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
-        {/* Catálogo de Exames (Público para Consulta) */}
-        <Route path="/exames" element={<ExamsList />} />
-        <Route path="/exames/:id" element={<ExamesDetalhes />} />
+          {/* Catálogo de Exames (Público para Consulta) */}
+          <Route path="/exames" element={<ExamsList />} />
+          <Route path="/exames/:id" element={<ExamesDetalhes />} />
 
-        {/* Paineis Protegidos por Regras de Negócio */}
-        <Route path="/dashboard-secretaria" element={
-          <RotaProtegida perfilRequerido="secretaria">
-            <DashboardSecretaria />
-          </RotaProtegida>
-        } />
+          {/* Paineis Protegidos por Regras de Negócio */}
+          <Route path="/dashboard-secretaria" element={
+            <RotaProtegida perfilRequerido="secretaria">
+              <DashboardSecretaria />
+            </RotaProtegida>
+          } />
 
-        <Route path="/agenda-medica" element={
-          <RotaProtegida perfilRequerido="medico">
-            <AgendaMedica />
-          </RotaProtegida>
-        } />
+          <Route path="/agenda-medica" element={
+            <RotaProtegida perfilRequerido="medico">
+              <AgendaMedica />
+            </RotaProtegida>
+          } />
 
-        <Route path="/medical-record" element={
-          <RotaProtegida perfilRequerido="medico">
-            <MedicalRecord />
-          </RotaProtegida>
-        } />
+          <Route path="/medical-record" element={
+            <RotaProtegida perfilRequerido="medico">
+              <MedicalRecord />
+            </RotaProtegida>
+          } />
 
-        <Route path="/my-appointments" element={
-          <RotaProtegida perfilRequerido="paciente">
-            <MyAppointments />
-          </RotaProtegida>
-        } />
+          <Route path="/my-appointments" element={
+            <RotaProtegida perfilRequerido="paciente">
+              <MyAppointments />
+            </RotaProtegida>
+          } />
 
-        <Route path="/agendamento-exames" element={
-          <RotaProtegida perfilRequerido="paciente">
-            <AgendamentoExames />
-          </RotaProtegida>
-        } />
+          <Route path="/agendamento-exames" element={
+            <RotaProtegida perfilRequerido="paciente">
+              <AgendamentoExames />
+            </RotaProtegida>
+          } />
 
-        {/* Redireciona médicos se tentarem acessar rotas diretas de ID de agendamento */}
-        <Route path="/medico/:id" element={user ? <Navigate to="/my-appointments" replace /> : <Navigate to="/login" replace />} />
+          {/* Redireciona médicos se tentarem acessar rotas diretas de ID de agendamento */}
+          <Route path="/medico/:id" element={user ? <Navigate to="/my-appointments" replace /> : <Navigate to="/login" replace />} />
 
-        {/* Rota Coringa para 404 - SEMPRE NO FINAL DE TUDO */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </>
+          {/* Rota Coringa para 404 - SEMPRE NO FINAL DE TUDO */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
+
+      {/* 3. RODAPÉ GLOBAL (Renderizado perfeitamente em todas as telas) */}
+      <RodapeNovo />
+      
+    </div>
   );
 }
 
+// O componente principal apenas inicializa o Contexto do Router
 export default function App() {
   return (
     <BrowserRouter>
