@@ -2,12 +2,12 @@ import React from 'react';
 import { Activity, ShieldCheck, HeartPulse } from 'lucide-react';
 
 export default function RodapeNovo() {
-  const verdeVibrante = "#0d9488";
+  const azulVibrante = "#0f172a";
 
   return (
     <footer style={{ 
       backgroundColor: 'white', 
-      borderTop: `2px solid ${verdeVibrante}`, 
+      borderTop: `2px solid ${azulVibrante}`, 
       padding: '2rem 0',
       width: '100%',
       marginTop: '40px' 
@@ -16,7 +16,7 @@ export default function RodapeNovo() {
         
         {/* LOGO */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ backgroundColor: verdeVibrante, padding: '8px', borderRadius: '10px' }}>
+          <div style={{ backgroundColor: azulVibrante, padding: '8px', borderRadius: '10px' }}>
             <Activity size={20} color="white" />
           </div>
           <span style={{ fontWeight: '900', color: '#1e293b', fontSize: '1.2rem' }}>SaúdeDigital</span>
@@ -25,12 +25,12 @@ export default function RodapeNovo() {
         {/* LINKS FORÇADOS */}
         <div style={{ display: 'flex', gap: '30px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <ShieldCheck size={20} color={verdeVibrante} />
-            <span style={{ color: verdeVibrante, fontWeight: 'bold', fontSize: '12px' }}>SEGURANÇA DE DADOS</span>
+            <ShieldCheck size={20} color={azulVibrante} />
+            <span style={{ color: azulVibrante, fontWeight: 'bold', fontSize: '12px' }}>SEGURANÇA DE DADOS</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <HeartPulse size={20} color={verdeVibrante} />
-            <span style={{ color: verdeVibrante, fontWeight: 'bold', fontSize: '12px' }}>SUPORTE 24/7</span>
+            <HeartPulse size={20} color={azulVibrante} />
+            <span style={{ color: azulVibrante, fontWeight: 'bold', fontSize: '12px' }}>SUPORTE 24/7</span>
           </div>
         </div>
 
