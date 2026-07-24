@@ -49,7 +49,6 @@ export default function DashboardSecretaria() {
       const dados = await response.json();
 
       if (Array.isArray(dados)) {
-        // Filtra os usuários com base na coluna 'perfil' vinda do banco
         const listaMedicos = dados.filter(u => u.perfil?.toLowerCase() === 'medico' || u.perfil?.toLowerCase() === 'médico');
         const listaPacientes = dados.filter(u => u.perfil?.toLowerCase() === 'paciente');
         
@@ -63,35 +62,33 @@ export default function DashboardSecretaria() {
 
   useEffect(() => {
     carregarDadosDoBanco();
-    carregarUsuariosDoBanco(); // Alimenta os dropdowns ao carregar a página
+    carregarUsuariosDoBanco();
   }, []);
 
   // 3. Altera o Status da Consulta dinamicamente (Confirmar, Cancelar, Atendido)
   const alterarStatusConsulta = async (id, novoStatus) => {
-  try {
-    const response = await fetch('https://saudedigital.alwaysdata.net/atualizar_status_consulta.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, status: novoStatus })
-    });
+    try {
+      const response = await fetch('https://saudedigital.alwaysdata.net/atualizar_status_consulta.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: novoStatus })
+      });
 
-    // Captura a resposta bruta como texto para sabermos o que o PHP realmente cuspiu
-    const textoBruto = await response.text();
-    console.log("Resposta bruta do servidor:", textoBruto);
+      const textoBruto = await response.text();
+      console.log("Resposta bruta do servidor:", textoBruto);
 
-    // Tenta converter o texto para objeto JS
-    const resultado = JSON.parse(textoBruto);
-    
-    if (resultado.success) {
-      carregarDadosDoBanco();
-    } else {
-      alert("Erro do backend: " + (resultado.error || resultado.mensagem));
+      const resultado = JSON.parse(textoBruto);
+      
+      if (resultado.success) {
+        carregarDadosDoBanco();
+      } else {
+        alert("Erro do backend: " + (resultado.error || resultado.mensagem));
+      }
+    } catch (error) {
+      console.error("Erro detalhado na requisição:", error);
+      alert("Ocorreu um erro. Verifique o Console (F12) para ver a resposta bruta do servidor.");
     }
-  } catch (error) {
-    console.error("Erro detalhado na requisição:", error);
-    alert("Ocorreu um erro. Verifique o Console (F12) para ver a resposta bruta do servidor.");
-  }
-};
+  };
 
   // 4. Cria um agendamento manual pela Administração
   const salvarAgendamentoManual = async (e) => {
@@ -120,13 +117,33 @@ export default function DashboardSecretaria() {
     }
   };
 
-  // 5. Filtra as consultas de forma resiliente (Suporta data_consulta ou data_hora)
+  // 5. Filtra as consultas de forma resiliente
   const consultasFiltradas = consultas.filter(c => {
     const dataConsulta = c.data_consulta || c.data_hora?.split(' ')[0];
     const bateData = dataConsulta === dataFiltro;
     const bateMedico = medicoSelecionado === 'todos' || Number(c.medico_id) === Number(medicoSelecionado);
     return bateData && bateMedico;
   });
+
+  // 6. Função para identificar se este agendamento conflita com outro do mesmo médico no mesmo horário
+  const temConflito = (itemAtual, listaTodasConsultas) => {
+    const horaAtual = itemAtual.horario_consulta?.substring(0, 5) || itemAtual.data_hora?.split(' ')[1]?.substring(0, 5);
+    const dataAtual = itemAtual.data_consulta || itemAtual.data_hora?.split(' ')[0];
+
+    const duplicadas = listaTodasConsultas.filter(c => {
+      const horaC = c.horario_consulta?.substring(0, 5) || c.data_hora?.split(' ')[1]?.substring(0, 5);
+      const dataC = c.data_consulta || c.data_hora?.split(' ')[0];
+
+      return (
+        Number(c.medico_id) === Number(itemAtual.medico_id) &&
+        dataC === dataAtual &&
+        horaC === horaAtual &&
+        c.status?.toLowerCase() !== 'cancelado'
+      );
+    });
+
+    return duplicadas.length > 1; // Se houver mais de uma, é um choque de horário!
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 p-6 font-sans">
@@ -142,11 +159,20 @@ export default function DashboardSecretaria() {
         <div className="flex flex-wrap gap-3 bg-white p-4 rounded-3xl border border-slate-100 shadow-sm">
           <div>
             <label className="text-[10px] font-black text-slate-400 uppercase block ml-1 mb-1">Data da Grade</label>
-            <input type="date" className="p-2 border border-slate-200 rounded-xl font-bold text-sm text-slate-700 focus:outline-none focus:border-indigo-600" value={dataFiltro} onChange={e => setDataFiltro(e.target.value)} />
+            <input 
+              type="date" 
+              className="p-2 border border-slate-200 rounded-xl font-bold text-sm text-slate-700 focus:outline-none focus:border-indigo-600" 
+              value={dataFiltro} 
+              onChange={e => setDataFiltro(e.target.value)} 
+            />
           </div>
           <div>
             <label className="text-[10px] font-black text-slate-400 uppercase block ml-1 mb-1">Filtrar por Médico</label>
-            <select className="p-2 border border-slate-200 rounded-xl font-bold text-sm text-slate-700 focus:outline-none focus:border-indigo-600" value={medicoSelecionado} onChange={e => setMedicoSelecionado(e.target.value)}>
+            <select 
+              className="p-2 border border-slate-200 rounded-xl font-bold text-sm text-slate-700 focus:outline-none focus:border-indigo-600" 
+              value={medicoSelecionado} 
+              onChange={e => setMedicoSelecionado(e.target.value)}
+            >
               <option value="todos">Todos os Profissionais</option>
               {medicos.map(m => (
                 <option key={m.id} value={m.id}>{m.nome}</option>
@@ -172,17 +198,26 @@ export default function DashboardSecretaria() {
           ) : (
             <div className="space-y-4">
               {consultasFiltradas.map(c => {
-                // Suporta o formato direto ou o extraído por string split
                 const horaExibicao = c.horario_consulta?.substring(0, 5) || c.data_hora?.split(' ')[1]?.substring(0, 5) || "00:00";
-                
+                const emConflito = temConflito(c, consultas);
+
                 return (
-                  <div key={c.id} className="flex flex-col md:flex-row md:items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-100 hover:shadow-md transition-all gap-4">
+                  <div key={c.id} className={`flex flex-col md:flex-row md:items-center justify-between p-5 rounded-2xl border transition-all gap-4 ${
+                    emConflito ? 'bg-rose-50/40 border-rose-200 shadow-sm' : 'bg-slate-50 border-slate-100 hover:shadow-md'
+                  }`}>
                     <div className="flex items-center gap-4">
                       <div className="bg-indigo-600 text-white font-black px-4 py-2.5 rounded-xl text-sm shadow-sm tracking-tight">
                         ⏱️ {horaExibicao}
                       </div>
                       <div>
-                        <h4 className="font-extrabold text-slate-800 text-base">Paciente: {c.paciente_nome || `ID #${c.paciente_id}`}</h4>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h4 className="font-extrabold text-slate-800 text-base">Paciente: {c.paciente_nome || `ID #${c.paciente_id}`}</h4>
+                          {emConflito && (
+                            <span className="bg-rose-100 text-rose-700 border border-rose-300 text-[10px] px-2 py-0.5 rounded-md font-black animate-pulse">
+                              ⚠️ Conflito de Horário!
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-slate-500 font-bold">Médico: <span className="text-indigo-600">{c.medico_nome || `ID #${c.medico_id}`}</span></p>
                         <p className="text-xs text-slate-400 italic mt-0.5">Motivo: {c.motivo}</p>
                       </div>
@@ -191,12 +226,12 @@ export default function DashboardSecretaria() {
                     <div className="flex items-center gap-2 self-end md:self-center">
                       <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider mr-2 ${
                         c.status === 'Confirmado' || c.status === 'Agendado' ? 'bg-emerald-100 text-emerald-700' :
-                        c.status === 'Cancelado' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'
+                        c.status === 'Cancelado' || c.status === 'cancelado' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'
                       }`}>
                         {c.status}
                       </span>
                       
-                      {c.status !== 'Atendido' && c.status !== 'Cancelado' && (
+                      {c.status !== 'Atendido' && c.status?.toLowerCase() !== 'cancelado' && (
                         <>
                           <button onClick={() => alterarStatusConsulta(c.id, 'Atendido')} className="bg-white hover:bg-emerald-600 hover:text-white border border-slate-200 text-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm transition-all">✓ Atender</button>
                           <button onClick={() => alterarStatusConsulta(c.id, 'Cancelado')} className="bg-white hover:bg-rose-600 hover:text-white border border-slate-200 text-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm transition-all">✕ Cancelar</button>
